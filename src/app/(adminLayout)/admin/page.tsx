@@ -1,12 +1,12 @@
-import AdminContainer from '@/components/ui/admin/AdminContainer'
-import React from 'react'
+import type { Metadata } from "next";
+import AdminContainer from "@/components/ui/admin/AdminContainer";
 
-function AdminPage() {
-  return (
-    <div>
-      <AdminContainer />
-    </div>
-  )
+export const metadata: Metadata = {
+  title: "Admin Console | NoteFlow",
+  description:
+    "Manage platform users, roles, and inspect all notes with administrator privileges.",
+};
+
+export default function AdminPage() {
+  return <AdminContainer />;
 }
-
-export default AdminPage

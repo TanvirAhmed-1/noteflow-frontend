@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { Hash, Sparkles, Users } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -10,6 +11,7 @@ import {
   Pagination,
   RoleBadge,
   SectionHeader,
+  Spinner,
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +29,11 @@ import {
 } from "@/redux/features/auth/authApi";
 import { IInterestGroup } from "@/types/note";
 
+interface ProfileFormValues {
+  name: string;
+  interestsInput: string;
+}
+
 export default function InterestsSection() {
   const [page, setPage] = useState(1);
   const { data: profileData } = useGetMyProfileQuery(undefined);
@@ -37,28 +44,38 @@ export default function InterestsSection() {
   const [updateProfile, { isLoading: isUpdating }] =
     useUpdateProfileMutation();
 
-  const [name, setName] = useState("");
-  const [interestsInput, setInterestsInput] = useState("");
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ProfileFormValues>({
+    defaultValues: {
+      name: "",
+      interestsInput: "",
+    },
+  });
 
   useEffect(() => {
     if (profileData?.result) {
-      setName(profileData.result.name || "");
-      setInterestsInput((profileData.result.interests || []).join(", "));
+      reset({
+        name: profileData.result.name || "",
+        interestsInput: (profileData.result.interests || []).join(", "),
+      });
     }
-  }, [profileData]);
+  }, [profileData, reset]);
 
   const groups: IInterestGroup[] = groupedData?.result || [];
   const meta = groupedData?.meta;
 
-  const handleUpdateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const interests = interestsInput
+  const onSubmit = async (values: ProfileFormValues) => {
+    const interests = values.interestsInput
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
 
     try {
-      await updateProfile({ name, interests }).unwrap();
+      await updateProfile({ name: values.name, interests }).unwrap();
       toast.success("Profile & interests updated!");
     } catch (err: unknown) {
       const msg =
@@ -89,21 +106,20 @@ export default function InterestsSection() {
           </CardHeader>
 
           <CardContent>
-            <form onSubmit={handleUpdateProfile} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <Input
                 label="Full Name"
                 placeholder="Your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
                 required
+                error={errors.name?.message}
+                {...register("name", { required: "Full name is required" })}
               />
 
               <Input
                 label="Interests (comma separated)"
                 placeholder="e.g. chess, reading, coding, travel"
-                value={interestsInput}
-                onChange={(e) => setInterestsInput(e.target.value)}
                 helperText="Used in Scenario 1 MongoDB Aggregation Pipeline"
+                {...register("interestsInput")}
               />
 
               <Button
@@ -111,6 +127,7 @@ export default function InterestsSection() {
                 disabled={isUpdating}
                 className="h-10 w-full cursor-pointer rounded-xl bg-indigo-600 text-xs font-bold uppercase tracking-wider text-white shadow-sm shadow-indigo-500/20 hover:bg-indigo-700"
               >
+                {isUpdating && <Spinner className="mr-1.5" />}
                 {isUpdating ? "Updating..." : "Save Profile & Interests"}
               </Button>
             </form>

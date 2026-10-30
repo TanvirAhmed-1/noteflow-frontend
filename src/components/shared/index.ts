@@ -17,3 +17,4 @@ export { SectionHeader } from "./section-header";
 export { EmptyState } from "./empty-state";
 export { RoleBadge } from "./role-badge";
 export { CardSkeleton } from "./card-skeleton";
+export { Spinner } from "@/components/ui/spinner";

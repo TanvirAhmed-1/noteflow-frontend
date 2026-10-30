@@ -1,5 +1,5 @@
+import Navbar from "@/components/shared/Navbar";
 import React from "react";
-import Navbar from "@/components/layout/Navbar";
 
 export default function CommonLayout({
   children,

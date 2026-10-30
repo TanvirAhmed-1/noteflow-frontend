@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useForm } from "react-hook-form";
 import { Filter, Globe, MessageSquarePlus, UserCheck, X } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -9,6 +10,7 @@ import {
   Input,
   Pagination,
   SectionHeader,
+  Spinner,
   Textarea,
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
@@ -29,11 +31,24 @@ import {
 import { useAppSelector } from "@/redux/hook";
 import { IPost } from "@/types/note";
 
+interface PostFormValues {
+  title: string;
+  content: string;
+}
+
 export default function PostsSection() {
   const { id: currentUserId } = useAppSelector((state) => state.auth);
   const [page, setPage] = useState(1);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const [formData, setFormData] = useState({ title: "", content: "" });
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<PostFormValues>({
+    defaultValues: { title: "", content: "" },
+  });
 
   const { data: allPostsData, isLoading: isLoadingAll } = useGetPostsQuery(
     { page, limit: 6 },
@@ -54,12 +69,11 @@ export default function PostsSection() {
   const lookedUpUser = lookupData?.user;
   const isLoading = selectedUserId ? isLoadingLookup : isLoadingAll;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (values: PostFormValues) => {
     try {
-      await createPost(formData).unwrap();
+      await createPost(values).unwrap();
       toast.success("Post published to community!");
-      setFormData({ title: "", content: "" });
+      reset({ title: "", content: "" });
     } catch (err: unknown) {
       const msg =
         (err as { data?: { message?: string } })?.data?.message ||
@@ -89,26 +103,24 @@ export default function PostsSection() {
           </CardHeader>
 
           <CardContent className="space-y-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <Input
                 label="Post Title"
                 placeholder="e.g. Indexing Best Practices in MongoDB"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, title: e.target.value }))
-                }
                 required
+                error={errors.title?.message}
+                {...register("title", { required: "Post title is required" })}
               />
 
               <Textarea
                 label="Post Content"
                 placeholder="Share knowledge, insights, or updates..."
                 rows={5}
-                value={formData.content}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, content: e.target.value }))
-                }
                 required
+                error={errors.content?.message}
+                {...register("content", {
+                  required: "Post content is required",
+                })}
               />
 
               <Button
@@ -116,6 +128,7 @@ export default function PostsSection() {
                 disabled={isCreating}
                 className="h-10 w-full cursor-pointer rounded-xl bg-indigo-600 text-xs font-bold uppercase tracking-wider text-white shadow-sm shadow-indigo-500/20 hover:bg-indigo-700"
               >
+                {isCreating && <Spinner className="mr-1.5" />}
                 {isCreating ? "Publishing..." : "Publish Post"}
               </Button>
             </form>

@@ -1,38 +1,44 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
 import { ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
-import { Input, DotMap } from "@/components/shared";
+import { Input, DotMap, Spinner } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { useLoginMutation } from "@/redux/features/auth/authApi";
+import { setTokenCookie } from "@/redux/server/storeCookies";
+
+interface LoginFormValues {
+  email: string;
+  password: string;
+}
 
 export default function LoginForm() {
   const router = useRouter();
   const [loginUser, { isLoading }] = useLoginMutation();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormValues>({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: LoginFormValues) => {
     try {
-      const res = await loginUser(formData).unwrap();
-      toast.success(res?.message || "Logged in successfully!");
-      const role = res?.result?.role;
-      if (role === "admin") {
-        router.push("/");
-      } else {
-        router.push("/");
+      const res = await loginUser(data).unwrap();
+      if (res?.result?.token) {
+        await setTokenCookie(res.result.token);
       }
+      toast.success(res?.message || "Logged in successfully!");
+      router.push("/");
     } catch (err: unknown) {
       const errorMsg =
         (err as { data?: { message?: string } })?.data?.message ||
@@ -42,10 +48,10 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="w-full max-w-4xl overflow-hidden rounded-2xl flex bg-white shadow-xl">
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50/70 to-indigo-100 p-4">
+      <div className="w-full max-w-4xl overflow-hidden rounded-2xl flex bg-white shadow-xl border border-slate-100">
         {/* Left Panel - Animated Map */}
-        <div className="hidden md:flex md:w-1/2 min-h-[560px] relative overflow-hidden border-r border-gray-100 bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="hidden md:flex md:w-1/2 min-h-[560px] relative overflow-hidden border-r border-slate-100 bg-gradient-to-br from-blue-50 to-indigo-100">
           <DotMap />
 
           <div className="relative z-10 flex flex-col items-center justify-center w-full p-8 text-center">
@@ -53,11 +59,11 @@ export default function LoginForm() {
               <ArrowRight className="h-6 w-6 text-white" />
             </div>
             <h2 className="mb-2 text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-              Travel Connect
+              NoteFlow Connect
             </h2>
-            <p className="max-w-xs text-sm text-gray-600">
-              Sign in to access your global travel dashboard and connect with
-              nomads worldwide
+            <p className="max-w-xs text-sm text-slate-600">
+              Sign in to access your global note-taking workspace and connect
+              with members worldwide
             </p>
           </div>
         </div>
@@ -65,10 +71,10 @@ export default function LoginForm() {
         {/* Right Panel - Login Form */}
         <div className="w-full md:w-1/2 p-8 md:p-10 flex flex-col justify-center bg-white">
           <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
               Welcome back
             </h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-slate-500">
               Sign in to your account
             </p>
           </div>
@@ -77,7 +83,7 @@ export default function LoginForm() {
           <button
             type="button"
             onClick={() => console.log("Google sign-in")}
-            className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-gray-200 bg-gray-50 p-2.5 text-sm font-medium text-gray-700 shadow-xs transition-colors hover:bg-gray-100"
+            className="flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-lg border border-slate-200 bg-slate-50/70 p-2.5 text-sm font-medium text-slate-700 shadow-xs transition-colors hover:bg-slate-100"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
               <path
@@ -102,55 +108,66 @@ export default function LoginForm() {
 
           {/* Divider */}
           <div className="relative my-6 flex items-center justify-center">
-            <div className="absolute inset-x-0 border-t border-gray-200" />
-            <span className="relative bg-white px-3 text-xs text-gray-400 uppercase">
+            <div className="absolute inset-x-0 border-t border-slate-200" />
+            <span className="relative bg-white px-3 text-xs text-slate-400 uppercase">
               or
             </span>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* React Hook Form */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input
-              name="email"
               type="email"
               label="Email"
               placeholder="Enter your email address"
-              value={formData.email}
-              onChange={handleChange}
               required
+              error={errors.email?.message}
+              {...register("email", {
+                required: "Email is required",
+              })}
             />
 
             <Input
-              name="password"
               type="password"
               label="Password"
               placeholder="Enter your password"
-              value={formData.password}
-              onChange={handleChange}
               required
+              error={errors.password?.message}
+              {...register("password", {
+                required: "Password is required",
+              })}
             />
 
             <Button
               type="submit"
               disabled={isLoading}
-              className="mt-2 h-10 w-full cursor-pointer rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 text-sm font-medium text-white shadow-md shadow-blue-500/20 hover:from-blue-600 hover:to-indigo-700"
+              className="mt-2 h-10 w-full cursor-pointer rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 text-sm font-semibold text-white shadow-md shadow-indigo-500/20 hover:from-blue-600 hover:to-indigo-700"
             >
-              {isLoading ? "Signing in..." : "Sign in"}
-              <ArrowRight className="ml-1.5 h-4 w-4" />
+              {isLoading ? (
+                <>
+                  <Spinner className="mr-2" />
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  Sign in
+                  <ArrowRight className="ml-1.5 h-4 w-4" />
+                </>
+              )}
             </Button>
 
             <div className="mt-6 flex items-center justify-between text-sm">
               <Link
                 href="#"
-                className="text-blue-600 transition-colors hover:text-blue-700"
+                className="text-indigo-600 transition-colors hover:text-indigo-700"
               >
                 Forgot password?
               </Link>
-              <p className="text-gray-500">
+              <p className="text-slate-500">
                 Don&apos;t have an account?{" "}
                 <Link
                   href="/register"
-                  className="font-semibold text-blue-600 hover:underline"
+                  className="font-semibold text-indigo-600 hover:underline"
                 >
                   Register
                 </Link>

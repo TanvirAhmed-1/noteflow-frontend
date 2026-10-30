@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useForm } from "react-hook-form";
 import { Edit3, FileText, Trash2, User, X } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -9,6 +10,7 @@ import {
   Input,
   Pagination,
   SectionHeader,
+  Spinner,
   Textarea,
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
@@ -26,10 +28,23 @@ import {
 } from "@/redux/features/note/noteApi";
 import { INote } from "@/types/note";
 
+interface AdminNoteFormValues {
+  title: string;
+  content: string;
+}
+
 export default function AllNotesManagement() {
   const [page, setPage] = useState(1);
   const [editingNote, setEditingNote] = useState<INote | null>(null);
-  const [formData, setFormData] = useState({ title: "", content: "" });
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<AdminNoteFormValues>({
+    defaultValues: { title: "", content: "" },
+  });
 
   const { data, isLoading } = useGetAllNotesByAdminQuery({
     page,
@@ -43,16 +58,15 @@ export default function AllNotesManagement() {
 
   const startEdit = (note: INote) => {
     setEditingNote(note);
-    setFormData({ title: note.title, content: note.content });
+    reset({ title: note.title, content: note.content });
   };
 
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (values: AdminNoteFormValues) => {
     if (!editingNote) return;
     try {
       await updateNote({
         noteId: editingNote._id,
-        data: formData,
+        data: values,
       }).unwrap();
       toast.success("Note updated by Admin");
       setEditingNote(null);
@@ -93,29 +107,26 @@ export default function AllNotesManagement() {
             </button>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleUpdate} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <Input
                 label="Title"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, title: e.target.value }))
-                }
                 required
+                error={errors.title?.message}
+                {...register("title", { required: "Title is required" })}
               />
               <Textarea
                 label="Content"
                 rows={3}
-                value={formData.content}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, content: e.target.value }))
-                }
                 required
+                error={errors.content?.message}
+                {...register("content", { required: "Content is required" })}
               />
               <Button
                 type="submit"
                 disabled={isUpdating}
                 className="h-9 cursor-pointer bg-indigo-600 text-xs font-bold text-white hover:bg-indigo-700"
               >
+                {isUpdating && <Spinner className="mr-1.5" />}
                 {isUpdating ? "Saving..." : "Save Note Changes"}
               </Button>
             </form>

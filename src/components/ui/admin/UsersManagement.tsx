@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useForm } from "react-hook-form";
 import { Edit3, Trash2, UserPlus, Users, X } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -9,6 +10,7 @@ import {
   Pagination,
   RoleBadge,
   SectionHeader,
+  Spinner,
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,18 +31,34 @@ import {
 } from "@/redux/features/auth/authApi";
 import { IUser, TUserRole } from "@/types/note";
 
-const initialForm = {
+interface UserFormValues {
+  name: string;
+  email: string;
+  password?: string;
+  role: TUserRole;
+  interests: string;
+}
+
+const defaultValues: UserFormValues = {
   name: "",
   email: "",
   password: "",
-  role: "user" as TUserRole,
+  role: "user",
   interests: "",
 };
 
 export default function UsersManagement() {
   const [page, setPage] = useState(1);
   const [editingUser, setEditingUser] = useState<IUser | null>(null);
-  const [formData, setFormData] = useState(initialForm);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<UserFormValues>({
+    defaultValues,
+  });
 
   const { data, isLoading } = useGetAllUsersQuery({ page, limit: 8 });
   const [createAdminUser, { isLoading: isCreating }] =
@@ -53,12 +71,12 @@ export default function UsersManagement() {
 
   const resetForm = () => {
     setEditingUser(null);
-    setFormData(initialForm);
+    reset(defaultValues);
   };
 
   const startEdit = (user: IUser) => {
     setEditingUser(user);
-    setFormData({
+    reset({
       name: user.name,
       email: user.email,
       password: "",
@@ -67,9 +85,8 @@ export default function UsersManagement() {
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const interests = formData.interests
+  const onSubmit = async (values: UserFormValues) => {
+    const interests = values.interests
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
@@ -77,16 +94,22 @@ export default function UsersManagement() {
     try {
       if (editingUser) {
         const payload: Record<string, unknown> = {
-          name: formData.name,
-          email: formData.email,
-          role: formData.role,
+          name: values.name,
+          email: values.email,
+          role: values.role,
           interests,
         };
-        if (formData.password.trim()) payload.password = formData.password;
+        if (values.password?.trim()) payload.password = values.password;
         await updateUser({ userId: editingUser._id, data: payload }).unwrap();
         toast.success("User updated successfully!");
       } else {
-        await createAdminUser({ ...formData, interests }).unwrap();
+        await createAdminUser({
+          name: values.name,
+          email: values.email,
+          password: values.password,
+          role: values.role,
+          interests,
+        }).unwrap();
         toast.success("New user added by Admin!");
       }
       resetForm();
@@ -139,25 +162,21 @@ export default function UsersManagement() {
           </CardHeader>
 
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <Input
                 label="Full Name"
                 placeholder="e.g. Tanvir Ahmed"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, name: e.target.value }))
-                }
                 required
+                error={errors.name?.message}
+                {...register("name", { required: "Full name is required" })}
               />
               <Input
                 type="email"
                 label="Email Address"
                 placeholder="user@example.com"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, email: e.target.value }))
-                }
                 required
+                error={errors.email?.message}
+                {...register("email", { required: "Email is required" })}
               />
               <Input
                 type="password"
@@ -165,22 +184,20 @@ export default function UsersManagement() {
                   editingUser ? "New Password (optional)" : "Initial Password"
                 }
                 placeholder="Min 6 characters"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, password: e.target.value }))
-                }
                 required={!editingUser}
+                error={errors.password?.message}
+                {...register("password", {
+                  required: editingUser ? false : "Password is required",
+                  minLength: {
+                    value: 6,
+                    message: "Min 6 characters required",
+                  },
+                })}
               />
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-gray-700">Role</label>
                 <select
-                  value={formData.role}
-                  onChange={(e) =>
-                    setFormData((p) => ({
-                      ...p,
-                      role: e.target.value as TUserRole,
-                    }))
-                  }
+                  {...register("role")}
                   className="h-10 rounded-md border border-gray-200 bg-gray-50/60 px-3 text-sm text-gray-800 outline-none focus:border-indigo-500"
                 >
                   <option value="user">User</option>
@@ -190,16 +207,14 @@ export default function UsersManagement() {
               <Input
                 label="Interests (comma separated)"
                 placeholder="chess, reading, coding"
-                value={formData.interests}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, interests: e.target.value }))
-                }
+                {...register("interests")}
               />
               <Button
                 type="submit"
                 disabled={isCreating || isUpdating}
                 className="h-10 w-full cursor-pointer rounded-xl bg-indigo-600 text-xs font-bold uppercase tracking-wider text-white hover:bg-indigo-700"
               >
+                {(isCreating || isUpdating) && <Spinner className="mr-1.5" />}
                 {editingUser
                   ? isUpdating
                     ? "Updating..."
@@ -221,8 +236,9 @@ export default function UsersManagement() {
         />
 
         {isLoading ? (
-          <Card className="p-8 text-center text-xs text-slate-400">
-            Loading users...
+          <Card className="flex items-center justify-center gap-2 p-10 text-xs text-slate-500">
+            <Spinner className="text-indigo-600" />
+            <span>Loading users...</span>
           </Card>
         ) : users.length === 0 ? (
           <EmptyState

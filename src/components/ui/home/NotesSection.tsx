@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useForm } from "react-hook-form";
 import { Clock, Edit3, FileText, PlusCircle, Trash2, X } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -9,6 +10,7 @@ import {
   Input,
   Pagination,
   SectionHeader,
+  Spinner,
   Textarea,
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
@@ -28,10 +30,23 @@ import {
 } from "@/redux/features/note/noteApi";
 import { INote } from "@/types/note";
 
+interface NoteFormValues {
+  title: string;
+  content: string;
+}
+
 export default function NotesSection() {
   const [page, setPage] = useState(1);
   const [editingNote, setEditingNote] = useState<INote | null>(null);
-  const [formData, setFormData] = useState({ title: "", content: "" });
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<NoteFormValues>({
+    defaultValues: { title: "", content: "" },
+  });
 
   const { data, isLoading } = useGetNotesQuery({
     page,
@@ -47,20 +62,19 @@ export default function NotesSection() {
 
   const resetForm = () => {
     setEditingNote(null);
-    setFormData({ title: "", content: "" });
+    reset({ title: "", content: "" });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (values: NoteFormValues) => {
     try {
       if (editingNote) {
         await updateNote({
           noteId: editingNote._id,
-          data: formData,
+          data: values,
         }).unwrap();
         toast.success("Note updated successfully!");
       } else {
-        await createNote(formData).unwrap();
+        await createNote(values).unwrap();
         toast.success("Note created successfully!");
       }
       resetForm();
@@ -115,26 +129,22 @@ export default function NotesSection() {
           </CardHeader>
 
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <Input
                 label="Note Title"
                 placeholder="e.g. Sprint Architecture Notes"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, title: e.target.value }))
-                }
                 required
+                error={errors.title?.message}
+                {...register("title", { required: "Title is required" })}
               />
 
               <Textarea
                 label="Note Content"
                 placeholder="Write your thoughts, tasks, or meeting summary..."
                 rows={5}
-                value={formData.content}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, content: e.target.value }))
-                }
                 required
+                error={errors.content?.message}
+                {...register("content", { required: "Content is required" })}
               />
 
               <Button
@@ -142,6 +152,7 @@ export default function NotesSection() {
                 disabled={isCreating || isUpdating}
                 className="h-10 w-full cursor-pointer rounded-xl bg-indigo-600 text-xs font-bold uppercase tracking-wider text-white shadow-sm shadow-indigo-500/20 hover:bg-indigo-700"
               >
+                {(isCreating || isUpdating) && <Spinner className="mr-1.5" />}
                 {editingNote
                   ? isUpdating
                     ? "Saving..."
@@ -193,7 +204,7 @@ export default function NotesSection() {
                         type="button"
                         onClick={() => {
                           setEditingNote(note);
-                          setFormData({
+                          reset({
                             title: note.title,
                             content: note.content,
                           });
