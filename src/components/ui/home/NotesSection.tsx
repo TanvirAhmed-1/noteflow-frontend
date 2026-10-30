@@ -2,10 +2,11 @@
 
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Clock, Edit3, FileText, PlusCircle, Trash2, X } from "lucide-react";
+import { Clock, Edit3, Eye, FileText, PlusCircle, Trash2, X } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   CardSkeleton,
+  DeleteModal,
   EmptyState,
   Input,
   Pagination,
@@ -26,6 +27,7 @@ import {
   useCreateNoteMutation,
   useDeleteNoteMutation,
   useGetNotesQuery,
+  useGetSingleNoteQuery,
   useUpdateNoteMutation,
 } from "@/redux/features/note/noteApi";
 import { INote } from "@/types/note";
@@ -38,6 +40,8 @@ interface NoteFormValues {
 export default function NotesSection() {
   const [page, setPage] = useState(1);
   const [editingNote, setEditingNote] = useState<INote | null>(null);
+  const [viewingNoteId, setViewingNoteId] = useState<string>("");
+  const [deletingNote, setDeletingNote] = useState<INote | null>(null);
 
   const {
     register,
@@ -53,12 +57,15 @@ export default function NotesSection() {
     limit: 6,
     scope: "own",
   });
+  const { data: singleNoteData, isFetching: isFetchingSingle } =
+    useGetSingleNoteQuery(viewingNoteId, { skip: !viewingNoteId });
   const [createNote, { isLoading: isCreating }] = useCreateNoteMutation();
   const [updateNote, { isLoading: isUpdating }] = useUpdateNoteMutation();
-  const [deleteNote] = useDeleteNoteMutation();
+  const [deleteNote, { isLoading: isDeleting }] = useDeleteNoteMutation();
 
   const notes: INote[] = data?.result || [];
   const meta = data?.meta;
+  const viewedNote: INote | undefined = singleNoteData?.result;
 
   const resetForm = () => {
     setEditingNote(null);
@@ -86,10 +93,13 @@ export default function NotesSection() {
     }
   };
 
-  const handleDelete = async (noteId: string) => {
+  const confirmDelete = async () => {
+    if (!deletingNote) return;
     try {
-      await deleteNote(noteId).unwrap();
+      await deleteNote(deletingNote._id).unwrap();
+      if (viewingNoteId === deletingNote._id) setViewingNoteId("");
       toast.success("Note deleted");
+      setDeletingNote(null);
     } catch (err: unknown) {
       const msg =
         (err as { data?: { message?: string } })?.data?.message ||
@@ -153,13 +163,7 @@ export default function NotesSection() {
                 className="h-10 w-full cursor-pointer rounded-xl bg-indigo-600 text-xs font-bold uppercase tracking-wider text-white shadow-sm shadow-indigo-500/20 hover:bg-indigo-700"
               >
                 {(isCreating || isUpdating) && <Spinner className="mr-1.5" />}
-                {editingNote
-                  ? isUpdating
-                    ? "Saving..."
-                    : "Save Changes"
-                  : isCreating
-                    ? "Creating..."
-                    : "Add Note"}
+                {editingNote ? "Save Changes" : "Add Note"}
               </Button>
             </form>
           </CardContent>
@@ -167,7 +171,32 @@ export default function NotesSection() {
       </div>
 
       {/* Right Column: Paginated Notes Grid */}
-      <div className="lg:col-span-8">
+      <div className="lg:col-span-8 space-y-4">
+        {viewingNoteId && (
+          <Card className="border-indigo-200 bg-indigo-50/40 p-5">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <Badge variant="indigo" className="mb-1.5 font-mono text-[10px]">
+                  GET /notes/{viewingNoteId} (Indexed by _id)
+                </Badge>
+                <CardTitle>
+                  {isFetchingSingle ? "Loading note..." : viewedNote?.title}
+                </CardTitle>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewingNoteId("")}
+                className="rounded-lg p-1 text-slate-400 hover:bg-white hover:text-slate-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="mt-2 whitespace-pre-line text-xs leading-relaxed text-slate-700">
+              {viewedNote?.content}
+            </p>
+          </Card>
+        )}
+
         <SectionHeader
           title="My Notes"
           description={
@@ -202,22 +231,27 @@ export default function NotesSection() {
                     <div className="flex shrink-0 items-center gap-1">
                       <button
                         type="button"
+                        onClick={() => setViewingNoteId(note._id)}
+                        className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+                        title="View single note"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => {
                           setEditingNote(note);
-                          reset({
-                            title: note.title,
-                            content: note.content,
-                          });
+                          reset({ title: note.title, content: note.content });
                         }}
-                        className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+                        className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
                         title="Edit note"
                       >
                         <Edit3 className="h-3.5 w-3.5" />
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleDelete(note._id)}
-                        className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+                        onClick={() => setDeletingNote(note)}
+                        className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
                         title="Delete note"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -247,6 +281,16 @@ export default function NotesSection() {
 
         <Pagination meta={meta} onPageChange={setPage} />
       </div>
+
+      <DeleteModal
+        open={!!deletingNote}
+        onOpenChange={(open) => !open && setDeletingNote(null)}
+        onConfirm={confirmDelete}
+        isLoading={isDeleting}
+        title="Delete Personal Note"
+        itemName={deletingNote?.title}
+        confirmText="Delete Note"
+      />
     </div>
   );
 }

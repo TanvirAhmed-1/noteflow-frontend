@@ -1,21 +1,28 @@
 import React from "react";
-import { Card } from "@/components/ui/card";
 
 interface EmptyStateProps {
   icon: React.ReactNode;
   title: string;
   description?: string;
+  action?: React.ReactNode;
 }
 
-export const EmptyState = ({ icon, title, description }: EmptyStateProps) => {
+export function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+}: EmptyStateProps) {
   return (
-    <Card className="items-center justify-center border-dashed border-slate-300 py-16 text-center shadow-none">
-      <div className="mb-1 text-slate-300">{icon}</div>
-      <h3 className="text-sm font-bold text-slate-700">{title}</h3>
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center">
+      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-400">
+        {icon}
+      </div>
+      <p className="text-sm font-bold text-slate-700">{title}</p>
       {description && (
-        <p className="max-w-xs text-xs text-slate-400">{description}</p>
+        <p className="mt-1 max-w-xs text-xs text-slate-400">{description}</p>
       )}
-    </Card>
+      {action && <div className="mt-4">{action}</div>}
+    </div>
   );
-};
-
+}

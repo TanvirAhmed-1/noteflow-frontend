@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   FileText,
   Globe,
+  KeyRound,
   Layers,
   Lock,
   ShieldCheck,
@@ -14,9 +15,10 @@ import { useAppSelector } from "@/redux/hook";
 import NotesSection from "@/components/ui/home/NotesSection";
 import PostsSection from "@/components/ui/home/PostsSection";
 import InterestsSection from "@/components/ui/home/InterestsSection";
+import { ChangePasswordCard } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 
-type TabType = "notes" | "posts" | "interests";
+type TabType = "notes" | "posts" | "interests" | "security";
 
 export default function HomeContainer() {
   const { token, name, role } = useAppSelector((state) => state.auth);
@@ -68,8 +70,8 @@ export default function HomeContainer() {
             Hello, {name || "Member"}!
           </h1>
           <p className="mt-1 text-xs text-indigo-100 sm:text-sm">
-            Manage indexed notes, community posts ($lookup), and interest
-            aggregations seamlessly.
+            Manage indexed notes, community posts ($lookup), interest
+            aggregations, and account security.
           </p>
         </div>
 
@@ -121,7 +123,20 @@ export default function HomeContainer() {
           }`}
         >
           <Layers className="h-4 w-4" />
-          Interests Aggregation & Profile
+          Interests & Profile
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("security")}
+          className={`inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all ${
+            activeTab === "security"
+              ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25"
+              : "bg-white text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          <KeyRound className="h-4 w-4" />
+          Change Password
         </button>
       </div>
 
@@ -129,6 +144,7 @@ export default function HomeContainer() {
       {activeTab === "notes" && <NotesSection />}
       {activeTab === "posts" && <PostsSection />}
       {activeTab === "interests" && <InterestsSection />}
+      {activeTab === "security" && <ChangePasswordCard />}
     </div>
   );
 }

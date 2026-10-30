@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Hash, Sparkles, Users } from "lucide-react";
+import { Check, Hash, Sparkles, Users } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   CardSkeleton,
@@ -29,13 +29,24 @@ import {
 } from "@/redux/features/auth/authApi";
 import { IInterestGroup } from "@/types/note";
 
+const INTEREST_OPTIONS = [
+  "chess",
+  "reading",
+  "coding",
+  "travel",
+  "music",
+  "photography",
+  "design",
+  "gaming",
+];
+
 interface ProfileFormValues {
   name: string;
-  interestsInput: string;
 }
 
 export default function InterestsSection() {
   const [page, setPage] = useState(1);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const { data: profileData } = useGetMyProfileQuery(undefined);
   const { data: groupedData, isLoading } = useGetUsersGroupedByInterestsQuery({
     page,
@@ -50,32 +61,31 @@ export default function InterestsSection() {
     reset,
     formState: { errors },
   } = useForm<ProfileFormValues>({
-    defaultValues: {
-      name: "",
-      interestsInput: "",
-    },
+    defaultValues: { name: "" },
   });
 
   useEffect(() => {
     if (profileData?.result) {
-      reset({
-        name: profileData.result.name || "",
-        interestsInput: (profileData.result.interests || []).join(", "),
-      });
+      reset({ name: profileData.result.name || "" });
+      setSelectedInterests(profileData.result.interests || []);
     }
   }, [profileData, reset]);
+
+  const toggleInterest = (tag: string) => {
+    setSelectedInterests((prev) =>
+      prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag]
+    );
+  };
 
   const groups: IInterestGroup[] = groupedData?.result || [];
   const meta = groupedData?.meta;
 
   const onSubmit = async (values: ProfileFormValues) => {
-    const interests = values.interestsInput
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-
     try {
-      await updateProfile({ name: values.name, interests }).unwrap();
+      await updateProfile({
+        name: values.name,
+        interests: selectedInterests,
+      }).unwrap();
       toast.success("Profile & interests updated!");
     } catch (err: unknown) {
       const msg =
@@ -115,12 +125,31 @@ export default function InterestsSection() {
                 {...register("name", { required: "Full name is required" })}
               />
 
-              <Input
-                label="Interests (comma separated)"
-                placeholder="e.g. chess, reading, coding, travel"
-                helperText="Used in Scenario 1 MongoDB Aggregation Pipeline"
-                {...register("interestsInput")}
-              />
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Select Interests
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {INTEREST_OPTIONS.map((tag) => {
+                    const active = selectedInterests.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => toggleInterest(tag)}
+                        className={`inline-flex cursor-pointer items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold capitalize transition-all ${
+                          active
+                            ? "border-indigo-600 bg-indigo-600 text-white shadow-xs"
+                            : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100"
+                        }`}
+                      >
+                        {active && <Check className="h-3 w-3" />}
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
               <Button
                 type="submit"
@@ -128,7 +157,7 @@ export default function InterestsSection() {
                 className="h-10 w-full cursor-pointer rounded-xl bg-indigo-600 text-xs font-bold uppercase tracking-wider text-white shadow-sm shadow-indigo-500/20 hover:bg-indigo-700"
               >
                 {isUpdating && <Spinner className="mr-1.5" />}
-                {isUpdating ? "Updating..." : "Save Profile & Interests"}
+                {isUpdating ? "Updating..." : "Save Profile"}
               </Button>
             </form>
           </CardContent>
@@ -157,7 +186,7 @@ export default function InterestsSection() {
           <EmptyState
             icon={<Users className="h-10 w-10" />}
             title="No interest groups found yet"
-            description='Add interests like "chess, reading" on the left to see users grouped by interest.'
+            description="Select interests on the left to see users grouped by interest."
           />
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

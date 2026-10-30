@@ -1,20 +1,26 @@
 "use client";
 
 import React, { useState } from "react";
-import { useForm } from "react-hook-form";
-import { Edit3, Trash2, UserPlus, Users, X } from "lucide-react";
+import {
+  Calendar,
+  Edit3,
+  Plus,
+  Search,
+  Trash2,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import {
+  DeleteModal,
   EmptyState,
-  Input,
   Pagination,
   RoleBadge,
-  SectionHeader,
   Spinner,
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -24,107 +30,51 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  useCreateAdminUserMutation,
   useDeleteUserMutation,
   useGetAllUsersQuery,
-  useUpdateUserMutation,
 } from "@/redux/features/auth/authApi";
-import { IUser, TUserRole } from "@/types/note";
-
-interface UserFormValues {
-  name: string;
-  email: string;
-  password?: string;
-  role: TUserRole;
-  interests: string;
-}
-
-const defaultValues: UserFormValues = {
-  name: "",
-  email: "",
-  password: "",
-  role: "user",
-  interests: "",
-};
+import { IUser } from "@/types/note";
+import AdminRoleGuard from "./AdminRoleGuard";
+import UserFormModal from "./UserFormModal";
 
 export default function UsersManagement() {
   const [page, setPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "user">("all");
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<IUser | null>(null);
+  const [deletingUser, setDeletingUser] = useState<IUser | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<UserFormValues>({
-    defaultValues,
-  });
-
-  const { data, isLoading } = useGetAllUsersQuery({ page, limit: 8 });
-  const [createAdminUser, { isLoading: isCreating }] =
-    useCreateAdminUserMutation();
-  const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
-  const [deleteUser] = useDeleteUserMutation();
+  const { data, isLoading } = useGetAllUsersQuery({ page, limit: 10 });
+  const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
 
   const users: IUser[] = data?.result || [];
   const meta = data?.meta;
 
-  const resetForm = () => {
+  const filteredUsers = users.filter((u) => {
+    const matchesSearch =
+      u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = roleFilter === "all" || u.role === roleFilter;
+    return matchesSearch && matchesRole;
+  });
+
+  const openCreateModal = () => {
     setEditingUser(null);
-    reset(defaultValues);
+    setIsModalOpen(true);
   };
 
-  const startEdit = (user: IUser) => {
+  const openEditModal = (user: IUser) => {
     setEditingUser(user);
-    reset({
-      name: user.name,
-      email: user.email,
-      password: "",
-      role: user.role,
-      interests: (user.interests || []).join(", "),
-    });
+    setIsModalOpen(true);
   };
 
-  const onSubmit = async (values: UserFormValues) => {
-    const interests = values.interests
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-
+  const confirmDelete = async () => {
+    if (!deletingUser) return;
     try {
-      if (editingUser) {
-        const payload: Record<string, unknown> = {
-          name: values.name,
-          email: values.email,
-          role: values.role,
-          interests,
-        };
-        if (values.password?.trim()) payload.password = values.password;
-        await updateUser({ userId: editingUser._id, data: payload }).unwrap();
-        toast.success("User updated successfully!");
-      } else {
-        await createAdminUser({
-          name: values.name,
-          email: values.email,
-          password: values.password,
-          role: values.role,
-          interests,
-        }).unwrap();
-        toast.success("New user added by Admin!");
-      }
-      resetForm();
-    } catch (err: unknown) {
-      toast.error(
-        (err as { data?: { message?: string } })?.data?.message ||
-          "Operation failed"
-      );
-    }
-  };
-
-  const handleDelete = async (userId: string) => {
-    try {
-      await deleteUser(userId).unwrap();
+      await deleteUser(deletingUser._id).unwrap();
       toast.success("User removed successfully");
+      setDeletingUser(null);
     } catch (err: unknown) {
       toast.error(
         (err as { data?: { message?: string } })?.data?.message ||
@@ -134,136 +84,120 @@ export default function UsersManagement() {
   };
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-      <div className="lg:col-span-4">
-        <Card className="sticky top-24">
-          <CardHeader className="flex-row items-center justify-between">
+    <AdminRoleGuard>
+      <div className="space-y-6">
+        {/* Top Page Header & Primary Create User Button */}
+        <div className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs sm:flex-row sm:items-center">
+          <div>
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-                {editingUser ? (
-                  <Edit3 className="h-4 w-4" />
-                ) : (
-                  <UserPlus className="h-4 w-4" />
-                )}
-              </div>
-              <CardTitle>
-                {editingUser ? "Edit User Account" : "Add New User"}
-              </CardTitle>
+              <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
+                User Directory & RBAC Management
+              </h1>
+              {meta && (
+                <Badge variant="indigo" className="font-mono">
+                  {meta.total} Users
+                </Badge>
+              )}
             </div>
-            {editingUser && (
+            <p className="mt-1 text-xs text-slate-500">
+              Manage platform accounts, assign Admin/User roles, and inspect
+              indexed user records{" "}
+              <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-indigo-600">
+                {"{ createdAt: -1 }"}
+              </code>
+            </p>
+          </div>
+
+          <Button
+            type="button"
+            onClick={openCreateModal}
+            className="h-10 cursor-pointer gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 text-xs font-bold text-white shadow-md shadow-indigo-500/20 hover:from-blue-700 hover:to-indigo-700"
+          >
+            <UserPlus className="h-4 w-4" />
+            Create New User
+          </Button>
+        </div>
+
+        {/* Search & Role Filter Toolbar */}
+        <div className="flex flex-col justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs sm:flex-row sm:items-center">
+          <div className="relative w-full sm:max-w-xs">
+            <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by name or email..."
+              className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50/70 pr-3 pl-9 text-xs text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {(["all", "admin", "user"] as const).map((r) => (
               <button
+                key={r}
                 type="button"
-                onClick={resetForm}
-                className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                onClick={() => setRoleFilter(r)}
+                className={`cursor-pointer rounded-xl px-3.5 py-1.5 text-xs font-bold capitalize transition-all ${
+                  roleFilter === r
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
               >
-                <X className="h-4 w-4" />
+                {r === "all" ? "All Roles" : `${r}s`}
               </button>
-            )}
-          </CardHeader>
+            ))}
+          </div>
+        </div>
 
-          <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <Input
-                label="Full Name"
-                placeholder="e.g. Tanvir Ahmed"
-                required
-                error={errors.name?.message}
-                {...register("name", { required: "Full name is required" })}
-              />
-              <Input
-                type="email"
-                label="Email Address"
-                placeholder="user@example.com"
-                required
-                error={errors.email?.message}
-                {...register("email", { required: "Email is required" })}
-              />
-              <Input
-                type="password"
-                label={
-                  editingUser ? "New Password (optional)" : "Initial Password"
-                }
-                placeholder="Min 6 characters"
-                required={!editingUser}
-                error={errors.password?.message}
-                {...register("password", {
-                  required: editingUser ? false : "Password is required",
-                  minLength: {
-                    value: 6,
-                    message: "Min 6 characters required",
-                  },
-                })}
-              />
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-gray-700">Role</label>
-                <select
-                  {...register("role")}
-                  className="h-10 rounded-md border border-gray-200 bg-gray-50/60 px-3 text-sm text-gray-800 outline-none focus:border-indigo-500"
-                >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              <Input
-                label="Interests (comma separated)"
-                placeholder="chess, reading, coding"
-                {...register("interests")}
-              />
-              <Button
-                type="submit"
-                disabled={isCreating || isUpdating}
-                className="h-10 w-full cursor-pointer rounded-xl bg-indigo-600 text-xs font-bold uppercase tracking-wider text-white hover:bg-indigo-700"
-              >
-                {(isCreating || isUpdating) && <Spinner className="mr-1.5" />}
-                {editingUser
-                  ? isUpdating
-                    ? "Updating..."
-                    : "Update User"
-                  : isCreating
-                    ? "Creating..."
-                    : "Create User"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="lg:col-span-8">
-        <SectionHeader
-          title="All Platform Users"
-          description="Admin directory sorted by newest registration"
-          countLabel={meta ? `${meta.total} Total Users` : undefined}
-        />
-
+        {/* Full-Width User Table */}
         {isLoading ? (
-          <Card className="flex items-center justify-center gap-2 p-10 text-xs text-slate-500">
+          <Card className="flex items-center justify-center gap-2 p-16 text-xs text-slate-500">
             <Spinner className="text-indigo-600" />
-            <span>Loading users...</span>
+            <span>Loading platform users...</span>
           </Card>
-        ) : users.length === 0 ? (
+        ) : filteredUsers.length === 0 ? (
           <EmptyState
             icon={<Users className="h-10 w-10" />}
-            title="No users found"
+            title="No matching users found"
+            description="Try clearing your search filter or create a new user account."
+            action={
+              <Button
+                type="button"
+                onClick={openCreateModal}
+                className="h-9 cursor-pointer gap-1.5 rounded-xl bg-indigo-600 px-4 text-xs font-bold text-white"
+              >
+                <Plus className="h-4 w-4" />
+                Add User
+              </Button>
+            }
           />
         ) : (
           <Card className="overflow-hidden p-0">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Role</TableHead>
+                <TableRow className="bg-slate-50/90">
+                  <TableHead>User Profile</TableHead>
+                  <TableHead>Access Role</TableHead>
                   <TableHead>Interests</TableHead>
+                  <TableHead>Joined</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((u) => (
-                  <TableRow key={u._id}>
+                {filteredUsers.map((u) => (
+                  <TableRow key={u._id} className="group">
                     <TableCell>
-                      <p className="font-bold text-slate-900">{u.name}</p>
-                      <p className="font-mono text-[11px] text-slate-400">
-                        {u.email}
-                      </p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 text-xs font-bold text-white shadow-xs">
+                          {u.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900">{u.name}</p>
+                          <p className="font-mono text-[11px] text-slate-400">
+                            {u.email}
+                          </p>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <RoleBadge role={u.role} />
@@ -281,25 +215,39 @@ export default function UsersManagement() {
                             </Badge>
                           ))
                         ) : (
-                          <span className="text-slate-300">—</span>
+                          <span className="text-xs text-slate-300">
+                            No tags
+                          </span>
                         )}
                       </div>
                     </TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center gap-1 font-mono text-[11px] text-slate-500">
+                        <Calendar className="h-3 w-3 text-slate-400" />
+                        {u.createdAt
+                          ? new Date(u.createdAt).toLocaleDateString()
+                          : "Active"}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-right">
-                      <div className="inline-flex items-center gap-1">
+                      <div className="inline-flex items-center gap-1.5">
                         <button
                           type="button"
-                          onClick={() => startEdit(u)}
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600"
+                          onClick={() => openEditModal(u)}
+                          className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
+                          title="Edit User"
                         >
                           <Edit3 className="h-3.5 w-3.5" />
+                          <span>Edit</span>
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDelete(u._id)}
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                          onClick={() => setDeletingUser(u)}
+                          className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-rose-200 bg-rose-50/50 px-2.5 py-1.5 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-100"
+                          title="Delete User"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
+                          <span>Delete</span>
                         </button>
                       </div>
                     </TableCell>
@@ -311,7 +259,29 @@ export default function UsersManagement() {
         )}
 
         <Pagination meta={meta} onPageChange={setPage} />
+
+        {/* Create / Edit User Shadcn Modal */}
+        <UserFormModal
+          open={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          editingUser={editingUser}
+        />
+
+        {/* Delete User Confirmation Modal */}
+        <DeleteModal
+          open={!!deletingUser}
+          onOpenChange={(open) => !open && setDeletingUser(null)}
+          onConfirm={confirmDelete}
+          isLoading={isDeleting}
+          title="Delete User Account"
+          itemName={
+            deletingUser
+              ? `${deletingUser.name} (${deletingUser.email})`
+              : undefined
+          }
+          confirmText="Delete User"
+        />
       </div>
-    </div>
+    </AdminRoleGuard>
   );
 }

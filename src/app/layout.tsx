@@ -19,6 +19,13 @@ export const metadata: Metadata = {
   title: "NoteFlow — Secure Note & Knowledge Platform",
   description:
     "Role-based note-taking and community posts platform with MongoDB indexing & aggregation.",
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

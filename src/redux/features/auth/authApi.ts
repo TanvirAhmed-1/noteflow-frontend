@@ -40,7 +40,28 @@ export const authApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["user"],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          const result = data?.result;
+          if (result?.token) {
+            dispatch(
+              login({
+                id: result.id || result._id,
+                name: result.name,
+                email: result.email,
+                role: result.role,
+                interests: result.interests || [],
+                token: result.token,
+              })
+            );
+            await setTokenCookie(result.token);
+          }
+        } catch (error) {
+          console.error("Registration failed:", error);
+        }
+      },
+      invalidatesTags: ["user", "note", "post"],
     }),
 
     getMyProfile: builder.query({
@@ -55,6 +76,14 @@ export const authApi = baseApi.injectEndpoints({
         body,
       }),
       invalidatesTags: ["user"],
+    }),
+
+    changePassword: builder.mutation({
+      query: (body: { currentPassword: string; newPassword: string }) => ({
+        url: "/change-password",
+        method: "PUT",
+        body,
+      }),
     }),
 
     createAdminUser: builder.mutation({
@@ -111,6 +140,7 @@ export const {
   useRegisterMutation,
   useGetMyProfileQuery,
   useUpdateProfileMutation,
+  useChangePasswordMutation,
   useCreateAdminUserMutation,
   useGetAllUsersQuery,
   useGetSingleUserQuery,

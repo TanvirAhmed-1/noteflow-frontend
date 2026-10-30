@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="nf-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2563EB" />
+      <stop offset="50%" stop-color="#4F46E5" />
+      <stop offset="100%" stop-color="#7C3AED" />
+    </linearGradient>
+    <linearGradient id="nf-glow" x1="12" y1="10" x2="52" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.28" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded Squircle Background -->
+  <rect width="64" height="64" rx="16" fill="url(#nf-bg)" />
+  <rect x="2" y="2" width="60" height="60" rx="14" stroke="url(#nf-glow)" stroke-width="2" />
+
+  <!-- Open Book / Note Pages Icon -->
+  <path
+    d="M14 21C14 18.7909 15.7909 17 18 17H26C29.3137 17 32 19.6863 32 23V47C32 45.3431 30.6569 44 29 44H18C15.7909 44 14 42.2091 14 40V21Z"
+    fill="white"
+    fill-opacity="0.95"
+  />
+  <path
+    d="M50 21C50 18.7909 48.2091 17 46 17H38C34.6863 17 32 19.6863 32 23V47C32 45.3431 33.3431 44 35 44H46C48.2091 44 50 42.2091 50 40V21Z"
+    fill="#E0E7FF"
+  />
+
+  <!-- Note Lines on Left Page -->
+  <rect x="18" y="23" width="9" height="2.4" rx="1.2" fill="#4F46E5" />
+  <rect x="18" y="28.5" width="7" height="2.4" rx="1.2" fill="#6366F1" />
+  <rect x="18" y="34" width="8" height="2.4" rx="1.2" fill="#818CF8" />
+
+  <!-- Accent Sparkle on Top Right -->
+  <circle cx="48" cy="16" r="5" fill="#FBBF24" />
+  <path d="M48 12.5V19.5M44.5 16H51.5" stroke="#FFFBEB" stroke-width="1.8" stroke-linecap="round" />
+</svg>
+

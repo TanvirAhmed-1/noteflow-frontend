@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import AdminContainer from "@/components/ui/admin/AdminContainer";
+import AdminOverview from "@/components/ui/admin/AdminOverview";
 
 export const metadata: Metadata = {
-  title: "Admin Console | NoteFlow",
+  title: "Overview Dashboard | NoteFlow Admin Console",
   description:
-    "Manage platform users, roles, and inspect all notes with administrator privileges.",
+    "Monitor platform users, recent user posts with MongoDB $lookup, indexed notes, and interest aggregations.",
 };
 
 export default function AdminPage() {
-  return <AdminContainer />;
+  return <AdminOverview />;
 }
