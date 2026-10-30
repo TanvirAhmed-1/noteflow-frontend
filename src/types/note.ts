@@ -52,3 +52,4 @@ export interface IInterestGroup {
     role: TUserRole;
   }[];
 }
+

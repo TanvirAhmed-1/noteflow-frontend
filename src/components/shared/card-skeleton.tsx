@@ -33,3 +33,4 @@ export const CardSkeleton = ({ count = 4, columns = 2 }: CardSkeletonProps) => {
     </div>
   );
 };
+

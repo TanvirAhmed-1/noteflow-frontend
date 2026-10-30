@@ -3,8 +3,23 @@
 import React, { useEffect, useState } from "react";
 import { Hash, Sparkles, Users } from "lucide-react";
 import toast from "react-hot-toast";
-import { Input, Pagination } from "@/components/shared";
+import {
+  CardSkeleton,
+  EmptyState,
+  Input,
+  Pagination,
+  RoleBadge,
+  SectionHeader,
+} from "@/components/shared";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   useGetMyProfileQuery,
   useGetUsersGroupedByInterestsQuery,
@@ -57,116 +72,100 @@ export default function InterestsSection() {
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
       {/* Left Column: Update My Profile & Interests */}
       <div className="lg:col-span-4">
-        <div className="sticky top-24 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
-          <div className="mb-5 flex items-center gap-2">
+        <Card className="sticky top-24">
+          <CardHeader className="flex-row items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
               <Sparkles className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">
-                My Profile & Interests
-              </h2>
-              <p className="text-[11px] text-slate-400">
+              <CardTitle>My Profile & Interests</CardTitle>
+              <CardDescription>
                 Updates multikey index{" "}
                 <code className="font-mono text-indigo-600">
                   {"{ interests: 1 }"}
                 </code>
-              </p>
+              </CardDescription>
             </div>
-          </div>
+          </CardHeader>
 
-          <form onSubmit={handleUpdateProfile} className="space-y-4">
-            <Input
-              label="Full Name"
-              placeholder="Your name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
+          <CardContent>
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              <Input
+                label="Full Name"
+                placeholder="Your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
 
-            <Input
-              label="Interests (comma separated)"
-              placeholder="e.g. chess, reading, coding, travel"
-              value={interestsInput}
-              onChange={(e) => setInterestsInput(e.target.value)}
-              helperText="Used in Scenario 1 MongoDB Aggregation Pipeline"
-            />
+              <Input
+                label="Interests (comma separated)"
+                placeholder="e.g. chess, reading, coding, travel"
+                value={interestsInput}
+                onChange={(e) => setInterestsInput(e.target.value)}
+                helperText="Used in Scenario 1 MongoDB Aggregation Pipeline"
+              />
 
-            <Button
-              type="submit"
-              disabled={isUpdating}
-              className="h-10 w-full cursor-pointer rounded-xl bg-indigo-600 text-xs font-bold uppercase tracking-wider text-white shadow-sm shadow-indigo-500/20 hover:bg-indigo-700"
-            >
-              {isUpdating ? "Updating..." : "Save Profile & Interests"}
-            </Button>
-          </form>
-        </div>
+              <Button
+                type="submit"
+                disabled={isUpdating}
+                className="h-10 w-full cursor-pointer rounded-xl bg-indigo-600 text-xs font-bold uppercase tracking-wider text-white shadow-sm shadow-indigo-500/20 hover:bg-indigo-700"
+              >
+                {isUpdating ? "Updating..." : "Save Profile & Interests"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Right Column: Scenario 1 Group by Interests */}
       <div className="lg:col-span-8">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">
-              Users Grouped by Interests (Scenario 1)
-            </h2>
-            <p className="text-xs text-slate-500">
+        <SectionHeader
+          title="Users Grouped by Interests (Scenario 1)"
+          description={
+            <>
               Powered by a single{" "}
               <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-indigo-600">
                 UserModel.aggregate()
               </code>{" "}
-              pipeline with{" "}
-              <code className="font-mono text-[11px] text-indigo-600">
-                $match → $unwind → $group → $facet
-              </code>
-            </p>
-          </div>
-        </div>
+              pipeline
+            </>
+          }
+          countLabel={meta ? `${meta.total} Interests` : undefined}
+        />
 
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {[1, 2, 3, 4].map((n) => (
-              <div
-                key={n}
-                className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-white p-5"
-              />
-            ))}
-          </div>
+          <CardSkeleton count={4} columns={2} />
         ) : groups.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center">
-            <Users className="mb-3 h-10 w-10 text-slate-300" />
-            <h3 className="text-sm font-bold text-slate-700">
-              No interest groups found yet
-            </h3>
-            <p className="mt-1 max-w-xs text-xs text-slate-400">
-              Add interests like &quot;chess, reading&quot; on the left to see
-              users grouped by interest.
-            </p>
-          </div>
+          <EmptyState
+            icon={<Users className="h-10 w-10" />}
+            title="No interest groups found yet"
+            description='Add interests like "chess, reading" on the left to see users grouped by interest.'
+          />
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {groups.map((group) => (
-              <div
+              <Card
                 key={group.interest}
-                className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition-all hover:border-indigo-200 hover:shadow-md"
+                className="p-5 hover:border-indigo-200 hover:shadow-md"
               >
-                <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
                       <Hash className="h-4 w-4" />
                     </span>
-                    <h3 className="text-base font-bold capitalize text-slate-900">
+                    <CardTitle className="capitalize">
                       {group.interest}
-                    </h3>
+                    </CardTitle>
                   </div>
 
-                  <span className="rounded-full bg-amber-50 px-2.5 py-0.5 font-mono text-xs font-bold text-amber-700">
+                  <Badge variant="amber" className="font-mono">
                     {group.totalUsers}{" "}
                     {group.totalUsers === 1 ? "User" : "Users"}
-                  </span>
+                  </Badge>
                 </div>
 
-                <div className="space-y-2">
+                <CardContent className="space-y-2">
                   {group.users.map((u) => (
                     <div
                       key={u._id}
@@ -178,19 +177,11 @@ export default function InterestsSection() {
                           {u.email}
                         </p>
                       </div>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                          u.role === "admin"
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-indigo-100 text-indigo-700"
-                        }`}
-                      >
-                        {u.role}
-                      </span>
+                      <RoleBadge role={u.role} />
                     </div>
                   ))}
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}

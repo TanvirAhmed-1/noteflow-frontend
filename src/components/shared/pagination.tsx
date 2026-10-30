@@ -55,3 +55,4 @@ export const Pagination = ({ meta, onPageChange }: PaginationProps) => {
     </div>
   );
 };
+
