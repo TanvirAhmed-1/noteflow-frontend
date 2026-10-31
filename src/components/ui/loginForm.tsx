@@ -82,7 +82,7 @@ export default function LoginForm() {
                   transition={{ delay: 0.7, duration: 0.5 }}
                   className="text-3xl font-bold mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600"
                 >
-                  Travel Connect
+                  NoteFlow
                 </motion.h2>
                 <motion.p
                   initial={{ opacity: 0, y: -20 }}
@@ -90,8 +90,8 @@ export default function LoginForm() {
                   transition={{ delay: 0.8, duration: 0.5 }}
                   className="text-sm text-center text-gray-600 max-w-xs"
                 >
-                  Sign in to access your global workspace dashboard and connect
-                  with nomads worldwide
+                  Sign in to manage personal notes, explore community posts, and
+                  access role-based features
                 </motion.p>
               </div>
             </div>

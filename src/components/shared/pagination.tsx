@@ -28,18 +28,19 @@ export const Pagination = ({
   const safeTotalPages = Math.max(1, totalPage);
 
   return (
-    <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-start">
+    <div className="mt-6 mb-12 flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-xs sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+      {/* Top / Left: Records Counter & Rows Selector */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 sm:justify-start">
         <p className="text-xs font-medium text-slate-500">
           Showing page <span className="font-bold text-slate-800">{page}</span>{" "}
           of <span className="font-bold text-slate-800">{safeTotalPages}</span>{" "}
-          <span className="text-slate-400">({total} total records)</span>
+          <span className="text-slate-400">({total} total)</span>
         </p>
 
         {onLimitChange && (
-          <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
+          <div className="flex items-center gap-1.5 sm:border-l sm:border-slate-200 sm:pl-3">
             <span className="text-xs font-medium text-slate-500">Rows:</span>
-            <div className="w-24 sm:w-28">
+            <div className="w-[120px]">
               <Select
                 size="sm"
                 value={String(limit)}
@@ -54,17 +55,18 @@ export const Pagination = ({
         )}
       </div>
 
-      <div className="flex items-center justify-center gap-1.5 sm:justify-end">
+      {/* Bottom / Right: Navigation Controls */}
+      <div className="flex items-center justify-center gap-1.5 border-t border-slate-100 pt-2.5 sm:border-t-0 sm:pt-0 sm:justify-end">
         <Button
           type="button"
           variant="outline"
           size="sm"
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
-          className="h-8 cursor-pointer gap-1 rounded-lg border-slate-200 px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40"
+          className="h-8.5 cursor-pointer gap-1 rounded-xl border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
-          Prev
+          <span>Prev</span>
         </Button>
 
         <div className="flex items-center gap-1">
@@ -86,7 +88,7 @@ export const Pagination = ({
                   <button
                     type="button"
                     onClick={() => onPageChange(p)}
-                    className={`h-8 min-w-8 cursor-pointer rounded-lg px-2 font-mono text-xs font-bold transition-all ${
+                    className={`h-8.5 min-w-[34px] cursor-pointer rounded-xl px-2.5 font-mono text-xs font-bold transition-all ${
                       p === page
                         ? "bg-indigo-600 text-white shadow-xs"
                         : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
@@ -105,9 +107,9 @@ export const Pagination = ({
           size="sm"
           disabled={page >= safeTotalPages}
           onClick={() => onPageChange(page + 1)}
-          className="h-8 cursor-pointer gap-1 rounded-lg border-slate-200 px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40"
+          className="h-8.5 cursor-pointer gap-1 rounded-xl border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40"
         >
-          Next
+          <span>Next</span>
           <ChevronRight className="h-3.5 w-3.5" />
         </Button>
       </div>

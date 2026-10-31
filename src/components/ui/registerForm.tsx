@@ -92,8 +92,8 @@ export default function RegisterForm() {
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-200">
               <BookOpen className="h-5 w-5" />
             </div>
-            <span className="text-lg font-extrabold tracking-tight text-gray-900">
-              Travel <span className="text-blue-600">Connect</span>
+            <span className="text-lg font-extrabold tracking-tight text-slate-900">
+              Note<span className="text-indigo-600">Flow</span>
             </span>
           </Link>
 

@@ -40,7 +40,10 @@ const dynamicBaseQuery = async (args: any, api: any, extraOptions: any) => {
 export const baseApi = createApi({
   reducerPath: "baseApi",
   baseQuery: dynamicBaseQuery,
-  tagTypes: ["user", "note", "post"],
+  tagTypes: ["user", "note", "post", "interest"],
+  keepUnusedDataFor: 120,
+  refetchOnReconnect: true,
+  refetchOnFocus: false,
   endpoints: () => ({}),
 });
 

@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
+import dynamic from "next/dynamic";
 import {
   Calendar,
-  Eye,
   Globe,
+  Hash,
   Plus,
   RotateCcw,
   Search,
@@ -19,17 +20,25 @@ import {
   Select,
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import PostCard from "@/components/ui/communityPosts/PostCard";
-import PostFormModal, {
-  POST_INTEREST_OPTIONS,
-} from "@/components/ui/admin/PostFormModal";
-import PostViewModal from "@/components/ui/admin/PostViewModal";
+import { POST_INTEREST_OPTIONS } from "@/components/ui/admin/PostFormModal";
 import {
   useDeletePostMutation,
   useGetPostsQuery,
 } from "@/redux/features/post/postApi";
 import { useAppSelector } from "@/redux/hook";
 import { IPost } from "@/types/note";
+
+const PostFormModal = dynamic(
+  () => import("@/components/ui/admin/PostFormModal"),
+  { ssr: false }
+);
+
+const PostViewModal = dynamic(
+  () => import("@/components/ui/admin/PostViewModal"),
+  { ssr: false }
+);
 
 export default function PostsSection() {
   const { id: currentUserId, role: currentUserRole } = useAppSelector(
@@ -86,7 +95,7 @@ export default function PostsSection() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4">
       {/* Top Header with Publish Post Modal Button */}
       <div className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs sm:flex-row sm:items-center sm:p-6">
         <div>
@@ -220,8 +229,8 @@ export default function PostsSection() {
             <PostCard
               key={post._id}
               post={post}
-              currentUserId={currentUserId}
-              currentUserRole={currentUserRole}
+              currentUserId={currentUserId ?? undefined}
+              currentUserRole={currentUserRole ?? undefined}
               onFilterUser={(name) => {
                 setUserNameFilter(name);
                 setPage(1);

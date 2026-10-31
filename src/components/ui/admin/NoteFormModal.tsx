@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { Input, Select, Spinner, Textarea } from "@/components/shared";
+import { Input, RichTextEditor, Spinner } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -51,7 +51,11 @@ export default function NoteFormModal({
     defaultValues: { title: "", content: "", type: "personal" },
   });
 
-  const selectedType = watch("type");
+  const contentValue = watch("content");
+
+  useEffect(() => {
+    register("content", { required: "Note content is required" });
+  }, [register]);
 
   useEffect(() => {
     if (editingNote) {
@@ -67,33 +71,42 @@ export default function NoteFormModal({
 
   const onSubmit = async (values: NoteFormValues) => {
     try {
+      const payload: NoteFormValues = {
+        ...values,
+        type: values.type || "personal", // Always private (personal)
+      };
       if (editingNote) {
-        await updateNote({ noteId: editingNote._id, data: values }).unwrap();
+        await updateNote({ noteId: editingNote._id, data: payload }).unwrap();
         toast.success("Note updated successfully");
       } else {
-        await createNote(values).unwrap();
+        await createNote(payload).unwrap();
         toast.success("Note created successfully");
       }
       onOpenChange(false);
     } catch (err: unknown) {
-      toast.error(
+      const errorMsg =
         (err as { data?: { message?: string } })?.data?.message ||
-          "Operation failed"
-      );
+        (err as { data?: string })?.data ||
+        (err as { message?: string })?.message ||
+        "Operation failed";
+      toast.error(errorMsg);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent onClose={() => !isSubmitting && onOpenChange(false)}>
+      <DialogContent
+        className="max-w-2xl sm:max-w-3xl w-full"
+        onClose={() => !isSubmitting && onOpenChange(false)}
+      >
         <DialogHeader>
           <DialogTitle>
             {editingNote ? "Update Note" : "Create New Note"}
           </DialogTitle>
           <DialogDescription>
             {editingNote
-              ? "Modify the note title, visibility type, or content."
-              : "Publish a Personal or Community note to the workspace."}
+              ? "Modify the note title or content."
+              : "Create a private note in your personal workspace."}
           </DialogDescription>
         </DialogHeader>
 
@@ -106,34 +119,14 @@ export default function NoteFormModal({
             {...register("title", { required: "Title is required" })}
           />
 
-          <Select
-            label="Note Type"
-            required
-            value={selectedType}
-            onValueChange={(val) =>
-              setValue("type", val as TNoteType, { shouldValidate: true })
-            }
-            options={[
-              {
-                label: "Personal Note (Private)",
-                value: "personal",
-                dotColor: "bg-indigo-600",
-              },
-              {
-                label: "Community Note (Shared)",
-                value: "community",
-                dotColor: "bg-emerald-500",
-              },
-            ]}
-          />
-
-          <Textarea
+          <RichTextEditor
             label="Note Content"
-            placeholder="Write detailed note content..."
-            rows={5}
+            value={contentValue || ""}
+            onChange={(val) =>
+              setValue("content", val, { shouldValidate: true })
+            }
             required
             error={errors.content?.message}
-            {...register("content", { required: "Content is required" })}
           />
 
           <DialogFooter>

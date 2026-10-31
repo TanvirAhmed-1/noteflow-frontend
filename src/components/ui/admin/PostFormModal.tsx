@@ -3,7 +3,12 @@
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { Input, Select, Spinner, Textarea } from "@/components/shared";
+import {
+  Input,
+  MultiSelect,
+  RichTextEditor,
+  Spinner,
+} from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,6 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useCreatePostMutation } from "@/redux/features/post/postApi";
+import { useGetInterestsQuery } from "@/redux/features/interest/interestApi";
 import { TNoteType } from "@/types/note";
 
 export const POST_INTEREST_OPTIONS = [
@@ -42,7 +48,7 @@ export const POST_INTEREST_OPTIONS = [
 interface PostFormValues {
   title: string;
   content: string;
-  interest: string;
+  interests: string[];
   type: TNoteType;
 }
 
@@ -56,6 +62,21 @@ export default function PostFormModal({
   onOpenChange,
 }: PostFormModalProps) {
   const [createPost, { isLoading: isSubmitting }] = useCreatePostMutation();
+  const { data: dynamicInterests } = useGetInterestsQuery({
+    status: "published",
+    limit: 100,
+  });
+
+  const availableOptions = React.useMemo(() => {
+    if (dynamicInterests?.result && dynamicInterests.result.length > 0) {
+      return dynamicInterests.result.map((item) => ({
+        label: item.title,
+        value: item.title,
+        dotColor: item.color || "bg-indigo-600",
+      }));
+    }
+    return POST_INTEREST_OPTIONS;
+  }, [dynamicInterests]);
 
   const {
     register,
@@ -68,20 +89,28 @@ export default function PostFormModal({
     defaultValues: {
       title: "",
       content: "",
-      interest: "Coding",
+      interests: ["Coding"],
       type: "community",
     },
   });
 
-  const selectedInterest = watch("interest");
-  const selectedType = watch("type");
+  const selectedInterests = watch("interests") || [];
+  const contentValue = watch("content");
+
+  useEffect(() => {
+    register("content", { required: "Post content is required" });
+    register("interests", {
+      validate: (val) =>
+        (val && val.length > 0) || "Please select at least one interest topic",
+    });
+  }, [register]);
 
   useEffect(() => {
     if (open) {
       reset({
         title: "",
         content: "",
-        interest: "Coding",
+        interests: ["Coding"],
         type: "community",
       });
     }
@@ -89,24 +118,38 @@ export default function PostFormModal({
 
   const onSubmit = async (values: PostFormValues) => {
     try {
-      await createPost(values).unwrap();
+      const payload = {
+        title: values.title,
+        content: values.content,
+        interest:
+          values.interests.length === 1
+            ? values.interests[0]
+            : values.interests,
+        type: values.type || "community",
+      };
+      await createPost(payload).unwrap();
       toast.success("Post published successfully!");
       onOpenChange(false);
     } catch (err: unknown) {
-      toast.error(
+      const errorMsg =
         (err as { data?: { message?: string } })?.data?.message ||
-          "Operation failed"
-      );
+        (err as { data?: string })?.data ||
+        (err as { message?: string })?.message ||
+        "Operation failed";
+      toast.error(errorMsg);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent onClose={() => !isSubmitting && onOpenChange(false)}>
+      <DialogContent
+        className="max-w-2xl sm:max-w-3xl w-full"
+        onClose={() => !isSubmitting && onOpenChange(false)}
+      >
         <DialogHeader>
-          <DialogTitle>Publish Post</DialogTitle>
+          <DialogTitle>Publish Community Post</DialogTitle>
           <DialogDescription>
-            Share a Community (Public) or Personal (Private) interest-based post.
+            Share an interest-based post with the platform community.
           </DialogDescription>
         </DialogHeader>
 
@@ -119,46 +162,26 @@ export default function PostFormModal({
             {...register("title", { required: "Post title is required" })}
           />
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Select
-              label="Interest Topic"
-              required
-              value={selectedInterest}
-              onValueChange={(val) =>
-                setValue("interest", val, { shouldValidate: true })
-              }
-              options={POST_INTEREST_OPTIONS}
-            />
+          <MultiSelect
+            label="Interest Topics"
+            placeholder="Select one or more interest topics..."
+            required
+            value={selectedInterests}
+            onValueChange={(val) =>
+              setValue("interests", val, { shouldValidate: true })
+            }
+            options={availableOptions}
+            error={errors.interests?.message}
+          />
 
-            <Select
-              label="Post Visibility Type"
-              required
-              value={selectedType}
-              onValueChange={(val) =>
-                setValue("type", val as TNoteType, { shouldValidate: true })
-              }
-              options={[
-                {
-                  label: "Community (Public)",
-                  value: "community",
-                  dotColor: "bg-emerald-500",
-                },
-                {
-                  label: "Personal (Private)",
-                  value: "personal",
-                  dotColor: "bg-indigo-600",
-                },
-              ]}
-            />
-          </div>
-
-          <Textarea
+          <RichTextEditor
             label="Post Content"
-            placeholder="Share insights, code patterns, or discussion points..."
-            rows={5}
+            value={contentValue || ""}
+            onChange={(val) =>
+              setValue("content", val, { shouldValidate: true })
+            }
             required
             error={errors.content?.message}
-            {...register("content", { required: "Post content is required" })}
           />
 
           <DialogFooter>

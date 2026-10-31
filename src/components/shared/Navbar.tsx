@@ -39,8 +39,13 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { name, email, role, token } = useAppSelector((state) => state.auth);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close mobile menu whenever route changes
   useEffect(() => {
@@ -69,7 +74,7 @@ export default function Navbar() {
         </Link>
 
         {/* Center Desktop Navigation Pills (Segmented style) */}
-        {token && (
+        {mounted && token && (
           <nav className="hidden items-center gap-1 rounded-2xl border border-slate-200/90 bg-slate-100/80 p-1.5 shadow-inner lg:flex">
             {WORKSPACE_NAV_ITEMS.map((item) => {
               const Icon = item.icon;
@@ -97,171 +102,139 @@ export default function Navbar() {
 
         {/* Desktop Right Auth & User Profile Actions */}
         <div className="hidden items-center gap-2.5 lg:flex">
-          {token ? (
-            <>
-              <Link
-              href="/change-password"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all ${
-                pathname === "/change-password"
-                  ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25"
-                  : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <KeyRound className="h-4 w-4" />
-              <span>Change Password</span>
-            </Link>
+          {mounted ? (
+            token ? (
+              <>
+                {role === "admin" && (
+                  <Link
+                    href="/admin"
+                    className={`flex items-center gap-1.5 rounded-xl border border-amber-300/80 bg-amber-50 px-3.5 py-1.5 text-xs font-bold text-amber-800 transition-colors hover:bg-amber-100/90 ${
+                      pathname.startsWith("/admin") ? "ring-2 ring-amber-400" : ""
+                    }`}
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
+                    <span>Admin Panel</span>
+                  </Link>
+                )}
 
-            {role === "admin" && (
-                <Link
-                  href="/admin"
-                  className={`flex items-center gap-1.5 rounded-xl border border-amber-300/80 bg-amber-50 px-3.5 py-1.5 text-xs font-bold text-amber-800 transition-colors hover:bg-amber-100/90 ${
-                    pathname.startsWith("/admin") ? "ring-2 ring-amber-400" : ""
-                  }`}
-                >
-                  <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
-                  <span>Admin Panel</span>
-                </Link>
-              )}
-
-              {/* User Profile Pill */}
-              <div className="flex items-center gap-2.5 rounded-full border border-slate-200/90 bg-slate-50/90 py-1 pr-3.5 pl-2 shadow-2xs">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-500 to-violet-600 text-xs font-bold text-white shadow-xs">
-                  {(name || "U").charAt(0).toUpperCase()}
+                {/* User Profile Pill */}
+                <div className="flex items-center gap-2.5 rounded-full border border-slate-200/90 bg-slate-50/90 py-1 pr-3.5 pl-2 shadow-2xs">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-500 to-violet-600 text-xs font-bold text-white shadow-xs">
+                    {(name || "U").charAt(0).toUpperCase()}
+                  </div>
+                  <div className="text-left leading-tight">
+                    <p className="max-w-[130px] truncate text-xs font-bold text-slate-800">
+                      {name || "User"}
+                    </p>
+                    <p className="max-w-[130px] truncate font-mono text-[10px] text-slate-500">
+                      {email}
+                    </p>
+                  </div>
+                  <span
+                    className={`ml-1 rounded-full px-2 py-0.5 font-mono text-[9px] font-extrabold tracking-wider uppercase ${
+                      role === "admin"
+                        ? "bg-amber-100 text-amber-800"
+                        : "bg-indigo-100 text-indigo-700"
+                    }`}
+                  >
+                    {role}
+                  </span>
                 </div>
-                <div className="text-left leading-tight">
-                  <p className="max-w-[130px] truncate text-xs font-bold text-slate-800">
-                    {name || "User"}
-                  </p>
-                  <p className="max-w-[130px] truncate font-mono text-[10px] text-slate-500">
-                    {email}
-                  </p>
-                </div>
-                <span
-                  className={`ml-1 rounded-full px-2 py-0.5 font-mono text-[9px] font-extrabold tracking-wider uppercase ${
-                    role === "admin"
-                      ? "bg-amber-100 text-amber-800"
-                      : "bg-indigo-100 text-indigo-700"
-                  }`}
-                >
-                  {role}
-                </span>
-              </div>
 
-              {/* Change Password Link */}
-              <Link
-                href="/change-password"
-                className={`flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 hover:text-slate-900 ${
-                  pathname === "/change-password" ? "ring-2 ring-indigo-500" : ""
-                }`}
-                title="Change Password"
-              >
-                <KeyRound className="h-3.5 w-3.5 text-slate-500" />
-                <span>Password</span>
-              </Link>
-
-              {/* Logout Button */}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-                className="h-8.5 cursor-pointer gap-1.5 rounded-xl border-slate-200 px-3 text-xs font-semibold text-rose-600 transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-                <span>Logout</span>
-              </Button>
-            </>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Link href="/login">
+                {/* Logout Button */}
                 <Button
+                  type="button"
                   variant="outline"
                   size="sm"
-                  className="h-8.5 cursor-pointer rounded-xl border-slate-200 text-xs font-semibold"
+                  onClick={handleLogout}
+                  className="h-8.5 cursor-pointer gap-1.5 rounded-xl border-slate-200 px-3 text-xs font-semibold text-rose-600 transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
                 >
-                  Sign In
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span>Logout</span>
                 </Button>
-              </Link>
-              <Link href="/register">
-                <Button
-                  size="sm"
-                  className="h-8.5 cursor-pointer gap-1 rounded-xl bg-indigo-600 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Register
-                </Button>
-              </Link>
-            </div>
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link href="/login">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8.5 cursor-pointer rounded-xl border-slate-200 text-xs font-semibold"
+                  >
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button
+                    size="sm"
+                    className="h-8.5 cursor-pointer gap-1 rounded-xl bg-indigo-600 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Register
+                  </Button>
+                </Link>
+              </div>
+            )
+          ) : (
+            <div className="h-8.5 w-24" />
           )}
         </div>
 
-        {/* Mobile Actions: Profile Badge + Hamburger */}
+        {/* Mobile Actions: Admin Badge + Hamburger */}
         <div className="flex items-center gap-2 lg:hidden">
-          {token ? (
-            <>
-              <Link
-              href="/change-password"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all ${
-                pathname === "/change-password"
-                  ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25"
-                  : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <KeyRound className="h-4 w-4" />
-              <span>Change Password</span>
-            </Link>
-
-            {role === "admin" && (
-                <Link
-                  href="/admin"
-                  className="flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700"
-                >
-                  <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
-                  <span>Admin</span>
-                </Link>
-              )}
-
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen((prev) => !prev)}
-                className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 transition-colors hover:bg-slate-100 focus:outline-none"
-                aria-label="Toggle navigation menu"
-              >
-                {mobileMenuOpen ? (
-                  <X className="h-5 w-5" />
-                ) : (
-                  <Menu className="h-5 w-5" />
+          {mounted && (
+            token ? (
+              <>
+                {role === "admin" && (
+                  <Link
+                    href="/admin"
+                    className="flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700"
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
+                    <span>Admin</span>
+                  </Link>
                 )}
-              </button>
-            </>
-          ) : (
-            <div className="flex items-center gap-1.5">
-              <Link href="/login">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 rounded-lg px-2.5 text-xs font-semibold"
+
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen((prev) => !prev)}
+                  className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 transition-colors hover:bg-slate-100 focus:outline-none"
+                  aria-label="Toggle navigation menu"
                 >
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/register">
-                <Button
-                  size="sm"
-                  className="h-8 rounded-lg bg-indigo-600 px-3 text-xs font-semibold text-white"
-                >
-                  Register
-                </Button>
-              </Link>
-            </div>
+                  {mobileMenuOpen ? (
+                    <X className="h-5 w-5" />
+                  ) : (
+                    <Menu className="h-5 w-5" />
+                  )}
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <Link href="/login">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 rounded-lg px-2.5 text-xs font-semibold"
+                  >
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button
+                    size="sm"
+                    className="h-8 rounded-lg bg-indigo-600 px-3 text-xs font-semibold text-white"
+                  >
+                    Register
+                  </Button>
+                </Link>
+              </div>
+            )
           )}
         </div>
       </div>
 
       {/* Mobile Menu Dropdown */}
-      {token && mobileMenuOpen && (
+      {mounted && token && mobileMenuOpen && (
         <div className="border-t border-slate-200/90 bg-white px-4 py-4 shadow-xl duration-200 animate-in fade-in-0 slide-in-from-top-2 lg:hidden">
           {/* User Profile Card */}
           <div className="mb-4 flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 p-3">

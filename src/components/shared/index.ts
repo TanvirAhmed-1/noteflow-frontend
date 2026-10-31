@@ -27,3 +27,6 @@ export { CardSkeleton } from "./card-skeleton";
 export { Spinner } from "@/components/ui/spinner";
 export { DeleteModal, type DeleteModalProps } from "./DeleteModal";
 export { ChangePasswordCard } from "../ui/admin/ChangePasswordCard";
+export { default as RichTextEditor } from "./RichTextEditor";
+export { default as RichTextRenderer } from "./RichTextRenderer";
+export { MultiSelect, type MultiSelectOption, type MultiSelectProps } from "@/components/ui/multi-select";

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Clock, Edit3, Globe, Lock, Trash2 } from "lucide-react";
-import { RoleBadge } from "@/components/shared";
+import { RichTextRenderer, RoleBadge } from "@/components/shared";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -73,13 +73,11 @@ export default function AdminNoteCard({
           </div>
         </div>
 
-        <p className="line-clamp-3 whitespace-pre-line text-xs leading-relaxed text-slate-600">
-          {note.content}
-        </p>
+        <RichTextRenderer content={note.content} lineClamp={3} />
       </CardContent>
 
       <CardFooter className="pt-3">
-        <span className="inline-flex items-center gap-1 font-mono text-[11px] text-slate-400">
+        <span suppressHydrationWarning className="inline-flex items-center gap-1 font-mono text-[11px] text-slate-400">
           <Clock className="h-3 w-3" />
           {note.createdAt
             ? new Date(note.createdAt).toLocaleDateString()

@@ -18,8 +18,10 @@ export default function AdminRoleGuard({
   useEffect(() => {
     if (!token) {
       router.replace("/login");
+    } else if (role !== "admin") {
+      router.replace("/");
     }
-  }, [token, router]);
+  }, [token, role, router]);
 
   if (!token) {
     return null;

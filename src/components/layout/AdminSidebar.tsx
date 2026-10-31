@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -67,8 +67,13 @@ export default function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { name, email, role } = useAppSelector((state) => state.auth);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = async () => {
     await removeTokenCookie();
@@ -175,18 +180,27 @@ export default function AdminSidebar() {
       {/* Bottom Admin Profile & Logout */}
       <div className="border-t border-slate-800/80 p-4">
         <div className="mb-3 flex items-center gap-3 rounded-xl bg-slate-900/90 p-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-500/20 font-bold text-indigo-400 ring-1 ring-indigo-500/30">
-            {(name || "A").charAt(0).toUpperCase()}
+          <div
+            suppressHydrationWarning
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-500/20 font-bold text-indigo-400 ring-1 ring-indigo-500/30"
+          >
+            {(mounted && name ? name : "A").charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <p className="truncate text-xs font-bold text-white">
-                {name || "Administrator"}
+              <p
+                suppressHydrationWarning
+                className="truncate text-xs font-bold text-white"
+              >
+                {mounted && name ? name : "Administrator"}
               </p>
               <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-amber-400" />
             </div>
-            <p className="truncate font-mono text-[10px] text-slate-400">
-              {email || role}
+            <p
+              suppressHydrationWarning
+              className="truncate font-mono text-[10px] text-slate-400"
+            >
+              {mounted && email ? email : mounted && role ? role : "admin@noteflow.com"}
             </p>
           </div>
         </div>

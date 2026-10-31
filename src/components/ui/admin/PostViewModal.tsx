@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { Clock, Hash, Mail } from "lucide-react";
-import { RoleBadge } from "@/components/shared";
+import { Clock, Hash } from "lucide-react";
+import { RichTextRenderer, RoleBadge } from "@/components/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,11 +26,19 @@ export default function PostViewModal({ post, onClose }: PostViewModalProps) {
     typeof post.userId === "object" && post.userId !== null
       ? post.userId
       : null;
-  const postInterest = post.interest || owner?.interests?.[0] || "General";
+  const postInterests: string[] = Array.isArray(post.interest)
+    ? post.interest
+    : typeof post.interest === "string" && post.interest.includes(",")
+    ? post.interest.split(",").map((s) => s.trim())
+    : post.interest
+    ? [post.interest]
+    : owner?.interests?.length
+    ? owner.interests
+    : ["General"];
 
   return (
     <Dialog open={!!post} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent onClose={onClose} className="max-w-xl">
+      <DialogContent onClose={onClose} className="max-w-2xl sm:max-w-3xl w-full">
         <DialogHeader>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 pr-6">
             <div className="flex items-center gap-3">
@@ -44,26 +52,31 @@ export default function PostViewModal({ post, onClose }: PostViewModalProps) {
                   </p>
                   {owner?.role && <RoleBadge role={owner.role} />}
                 </div>
-                {owner?.email && (
-                  <p className="mt-0.5 flex items-center gap-1 font-mono text-[11px] text-slate-400">
-                    <Mail className="h-3 w-3" />
-                    {owner.email}
-                  </p>
-                )}
               </div>
             </div>
 
-            <Badge variant="indigo" className="gap-1 font-mono text-xs">
-              <Hash className="h-3 w-3" />
-              {postInterest}
-            </Badge>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {postInterests.map((item) => (
+                <Badge
+                  key={item}
+                  variant="indigo"
+                  className="gap-1 font-mono text-xs"
+                >
+                  <Hash className="h-3 w-3" />
+                  {item}
+                </Badge>
+              ))}
+            </div>
           </div>
 
           <DialogTitle className="text-lg leading-snug font-extrabold text-slate-900">
             {post.title}
           </DialogTitle>
 
-          <div className="mt-1 flex items-center gap-1.5 font-mono text-[11px] text-slate-400">
+          <div
+            suppressHydrationWarning
+            className="mt-1 flex items-center gap-1.5 font-mono text-[11px] text-slate-400"
+          >
             <Clock className="h-3.5 w-3.5" />
             <span>
               {post.createdAt
@@ -74,9 +87,7 @@ export default function PostViewModal({ post, onClose }: PostViewModalProps) {
         </DialogHeader>
 
         <div className="mt-4 max-h-[55vh] overflow-y-auto rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-          <p className="whitespace-pre-line text-sm leading-relaxed text-slate-700">
-            {post.content}
-          </p>
+          <RichTextRenderer content={post.content} />
         </div>
 
         <DialogFooter className="mt-5">

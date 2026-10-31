@@ -105,8 +105,9 @@ export default function OverviewPostsFeed() {
             const ownerName = owner?.name || "Platform User";
             const ownerEmail = owner?.email || "";
             const ownerRole = owner?.role || "user";
-            const postInterest =
-              post.interest || owner?.interests?.[0] || "General";
+            const postInterest: string = Array.isArray(post.interest)
+              ? post.interest[0] || "General"
+              : post.interest || owner?.interests?.[0] || "General";
 
             return (
               <div

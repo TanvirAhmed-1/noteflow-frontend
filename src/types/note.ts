@@ -41,7 +41,8 @@ export interface IPost {
   _id: string;
   title: string;
   content: string;
-  interest?: string;
+  interest?: string | string[];
+  interests?: string[];
   type?: TNoteType;
   source?: "post" | "note";
   userId: string | INoteOwner;

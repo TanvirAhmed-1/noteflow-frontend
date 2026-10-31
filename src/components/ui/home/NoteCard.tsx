@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Clock, Edit3, Eye, Globe, Lock, Trash2 } from "lucide-react";
+import { RichTextRenderer } from "@/components/shared";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -58,13 +59,11 @@ export default function NoteCard({
             </button>
           </div>
         </div>
-        <p className="line-clamp-4 whitespace-pre-line text-xs leading-relaxed text-slate-600">
-          {note.content}
-        </p>
+        <RichTextRenderer content={note.content} lineClamp={4} />
       </CardContent>
 
       <CardFooter className="pt-3">
-        <span className="flex items-center gap-1 font-mono text-[11px] text-slate-400">
+        <span suppressHydrationWarning className="flex items-center gap-1 font-mono text-[11px] text-slate-400">
           <Clock className="h-3 w-3" />
           {note.createdAt
             ? new Date(note.createdAt).toLocaleDateString()

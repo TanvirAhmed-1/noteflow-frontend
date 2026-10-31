@@ -19,6 +19,7 @@ import {
   Select,
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   useDeleteNoteMutation,
   useGetAllNotesByAdminQuery,

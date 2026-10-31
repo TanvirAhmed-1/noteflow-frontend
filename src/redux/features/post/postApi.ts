@@ -17,7 +17,7 @@ export const postApi = baseApi.injectEndpoints({
       query: (body: {
         title: string;
         content: string;
-        interest?: string;
+        interest?: string | string[];
         type?: TNoteType;
       }) => ({
         url: "/posts",

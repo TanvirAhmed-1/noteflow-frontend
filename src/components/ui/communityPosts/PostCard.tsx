@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Clock, Eye, Hash, Trash2 } from "lucide-react";
-import { RoleBadge } from "@/components/shared";
+import { RichTextRenderer, RoleBadge } from "@/components/shared";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -14,8 +14,8 @@ import { INoteOwner, IPost } from "@/types/note";
 
 interface PostCardProps {
   post: IPost;
-  currentUserId?: string;
-  currentUserRole?: string;
+  currentUserId?: string | null;
+  currentUserRole?: string | null;
   onFilterUser: (userName: string) => void;
   onFilterInterest: (interest: string) => void;
   onView: (post: IPost) => void;
@@ -39,8 +39,15 @@ export default function PostCard({
 
   const canManage =
     currentUserRole === "admin" || currentUserId === ownerId;
-  const postInterest =
-    post.interest || owner?.interests?.[0] || "General";
+  const postInterests: string[] = Array.isArray(post.interest)
+    ? post.interest
+    : typeof post.interest === "string" && post.interest.includes(",")
+    ? post.interest.split(",").map((s) => s.trim())
+    : post.interest
+    ? [post.interest]
+    : owner?.interests?.length
+    ? owner.interests
+    : ["General"];
 
   return (
     <Card className="justify-between p-4 sm:p-5 transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
@@ -91,33 +98,44 @@ export default function PostCard({
         </div>
 
         {/* Post snippet */}
-        <p className="line-clamp-3 whitespace-pre-line text-xs leading-relaxed text-slate-600">
-          {post.content}
-        </p>
+        <RichTextRenderer content={post.content} lineClamp={3} />
       </CardContent>
 
       <CardFooter className="pt-3">
-        <span className="inline-flex items-center gap-1 font-mono text-[11px] text-slate-400">
+        <span suppressHydrationWarning className="inline-flex items-center gap-1 font-mono text-[11px] text-slate-400">
           <Clock className="h-3 w-3" />
           {post.createdAt
             ? new Date(post.createdAt).toLocaleDateString()
             : "Recent"}
         </span>
 
-        <button
-          type="button"
-          onClick={() => onFilterInterest(postInterest)}
-          className="cursor-pointer"
-          title="Filter by this interest"
-        >
-          <Badge
-            variant="indigo"
-            className="gap-1 font-mono text-[10px] hover:bg-indigo-100"
-          >
-            <Hash className="h-3 w-3" />
-            {postInterest}
-          </Badge>
-        </button>
+        <div className="flex flex-wrap items-center gap-1">
+          {postInterests.slice(0, 2).map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => onFilterInterest(item)}
+              className="cursor-pointer"
+              title={`Filter by ${item}`}
+            >
+              <Badge
+                variant="indigo"
+                className="gap-1 font-mono text-[10px] hover:bg-indigo-100"
+              >
+                <Hash className="h-2.5 w-2.5" />
+                {item}
+              </Badge>
+            </button>
+          ))}
+          {postInterests.length > 2 && (
+            <Badge
+              variant="secondary"
+              className="font-mono text-[10px] text-slate-500"
+            >
+              +{postInterests.length - 2}
+            </Badge>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );
