@@ -50,7 +50,7 @@ function DialogContent({
       role="dialog"
       aria-modal="true"
       className={cn(
-        "relative z-50 grid w-full max-w-md gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl duration-200 animate-in fade-in-0 zoom-in-95",
+        "relative z-50 grid w-full max-w-md max-h-[90vh] overflow-y-auto gap-4 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xl duration-200 animate-in fade-in-0 zoom-in-95",
         className
       )}
       {...props}

@@ -9,6 +9,7 @@ import {
   FileStack,
   Globe,
   KeyRound,
+  Layers,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -43,9 +44,15 @@ const NAV_ITEMS = [
     exact: false,
   },
   {
-    label: "User Posts ($lookup)",
+    label: "Community Posts",
     href: "/admin/posts",
     icon: Globe,
+    exact: false,
+  },
+  {
+    label: "Interest Groups & Posts",
+    href: "/admin/interests",
+    icon: Layers,
     exact: false,
   },
   {
@@ -64,10 +71,10 @@ export default function AdminSidebar() {
   const { name, email, role } = useAppSelector((state) => state.auth);
 
   const handleLogout = async () => {
-    dispatch(logout());
     await removeTokenCookie();
+    dispatch(logout());
     toast.success("Logged out successfully");
-    router.push("/login");
+    router.replace("/login");
   };
 
   const isActive = (href: string, exact: boolean) =>

@@ -1,9 +1,25 @@
 import { baseApi } from "../../api/baseApi";
+import { TNoteType } from "@/types/note";
+
+export interface PostQueryParams {
+  page?: number;
+  limit?: number;
+  interest?: string;
+  userName?: string;
+  type?: string;
+  date?: string;
+  searchTerm?: string;
+}
 
 export const postApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     createPost: builder.mutation({
-      query: (body: { title: string; content: string }) => ({
+      query: (body: {
+        title: string;
+        content: string;
+        interest?: string;
+        type?: TNoteType;
+      }) => ({
         url: "/posts",
         method: "POST",
         body,
@@ -12,11 +28,19 @@ export const postApi = baseApi.injectEndpoints({
     }),
 
     getPosts: builder.query({
-      query: (params?: { page?: number; limit?: number }) => ({
+      query: (params?: PostQueryParams) => ({
         url: "/posts",
         params,
       }),
       providesTags: ["post"],
+    }),
+
+    getAdminPostsTable: builder.query({
+      query: (params?: PostQueryParams) => ({
+        url: "/posts/admin-table",
+        params,
+      }),
+      providesTags: ["post", "note", "user"],
     }),
 
     getUserPosts: builder.query({
@@ -39,13 +63,43 @@ export const postApi = baseApi.injectEndpoints({
       query: (postId: string) => `/posts/${postId}`,
       providesTags: ["post"],
     }),
+
+    updatePost: builder.mutation({
+      query: ({
+        postId,
+        data,
+      }: {
+        postId: string;
+        data: {
+          title?: string;
+          content?: string;
+          interest?: string;
+          type?: TNoteType;
+        };
+      }) => ({
+        url: `/posts/${postId}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["post"],
+    }),
+
+    deletePost: builder.mutation({
+      query: (postId: string) => ({
+        url: `/posts/${postId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["post"],
+    }),
   }),
 });
 
 export const {
   useCreatePostMutation,
   useGetPostsQuery,
+  useGetAdminPostsTableQuery,
   useGetUserPostsQuery,
   useGetSinglePostQuery,
+  useUpdatePostMutation,
+  useDeletePostMutation,
 } = postApi;
-

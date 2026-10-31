@@ -1,9 +1,21 @@
 import { baseApi } from "../../api/baseApi";
+import { TNoteType } from "@/types/note";
+
+export interface NoteQueryParams {
+  page?: number;
+  limit?: number;
+  scope?: "own" | "all";
+  type?: string;
+  searchTerm?: string;
+  userName?: string;
+  date?: string;
+  userId?: string;
+}
 
 export const noteApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     createNote: builder.mutation({
-      query: (body: { title: string; content: string }) => ({
+      query: (body: { title: string; content: string; type?: TNoteType }) => ({
         url: "/notes",
         method: "POST",
         body,
@@ -12,12 +24,7 @@ export const noteApi = baseApi.injectEndpoints({
     }),
 
     getNotes: builder.query({
-      query: (params?: {
-        page?: number;
-        limit?: number;
-        scope?: "own" | "all";
-        userId?: string;
-      }) => ({
+      query: (params?: NoteQueryParams) => ({
         url: "/notes",
         params,
       }),
@@ -25,7 +32,7 @@ export const noteApi = baseApi.injectEndpoints({
     }),
 
     getAllNotesByAdmin: builder.query({
-      query: (params?: { page?: number; limit?: number; userId?: string }) => ({
+      query: (params?: NoteQueryParams) => ({
         url: "/notes/all",
         params,
       }),
@@ -43,7 +50,7 @@ export const noteApi = baseApi.injectEndpoints({
         data,
       }: {
         noteId: string;
-        data: { title?: string; content?: string };
+        data: { title?: string; content?: string; type?: TNoteType };
       }) => ({
         url: `/notes/${noteId}`,
         method: "PUT",
@@ -70,4 +77,3 @@ export const {
   useUpdateNoteMutation,
   useDeleteNoteMutation,
 } = noteApi;
-

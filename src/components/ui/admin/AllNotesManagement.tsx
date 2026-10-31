@@ -1,103 +1,82 @@
 "use client";
 
 import React, { useState } from "react";
-import { useForm } from "react-hook-form";
-import { Clock, Edit3, FileText, Plus, Trash2 } from "lucide-react";
+import {
+  Calendar,
+  FileText,
+  Layers,
+  Plus,
+  RotateCcw,
+  Search,
+  User,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import {
   CardSkeleton,
   DeleteModal,
   EmptyState,
-  Input,
   Pagination,
-  RoleBadge,
-  Spinner,
-  Textarea,
+  Select,
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter, CardTitle } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  useCreateNoteMutation,
   useDeleteNoteMutation,
   useGetAllNotesByAdminQuery,
-  useUpdateNoteMutation,
 } from "@/redux/features/note/noteApi";
 import { INote } from "@/types/note";
 import AdminRoleGuard from "./AdminRoleGuard";
-
-interface AdminNoteFormValues {
-  title: string;
-  content: string;
-}
+import AdminNoteCard from "./AdminNoteCard";
+import NoteFormModal from "./NoteFormModal";
 
 export default function AllNotesManagement() {
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(12);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [userNameFilter, setUserNameFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"all" | "personal" | "community">(
+    "all"
+  );
+  const [dateFilter, setDateFilter] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<INote | null>(null);
   const [deletingNote, setDeletingNote] = useState<INote | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<AdminNoteFormValues>({
-    defaultValues: { title: "", content: "" },
+  const { data, isLoading } = useGetAllNotesByAdminQuery({
+    page,
+    limit,
+    type: typeFilter === "all" ? undefined : typeFilter,
+    searchTerm: searchTerm.trim() || undefined,
+    userName: userNameFilter.trim() || undefined,
+    date: dateFilter || undefined,
   });
-
-  const { data, isLoading } = useGetAllNotesByAdminQuery({ page, limit: 6 });
-  const [createNote, { isLoading: isCreating }] = useCreateNoteMutation();
-  const [updateNote, { isLoading: isUpdating }] = useUpdateNoteMutation();
   const [deleteNote, { isLoading: isDeleting }] = useDeleteNoteMutation();
 
   const notes: INote[] = data?.result || [];
   const meta = data?.meta;
-  const isSubmitting = isCreating || isUpdating;
 
   const openCreateModal = () => {
     setEditingNote(null);
-    reset({ title: "", content: "" });
     setIsModalOpen(true);
   };
 
   const openEditModal = (note: INote) => {
     setEditingNote(note);
-    reset({ title: note.title, content: note.content });
     setIsModalOpen(true);
   };
 
-  const onSubmit = async (values: AdminNoteFormValues) => {
-    try {
-      if (editingNote) {
-        await updateNote({ noteId: editingNote._id, data: values }).unwrap();
-        toast.success("Note updated by Admin");
-      } else {
-        await createNote(values).unwrap();
-        toast.success("Note created successfully");
-      }
-      setIsModalOpen(false);
-    } catch (err: unknown) {
-      toast.error(
-        (err as { data?: { message?: string } })?.data?.message ||
-          "Operation failed"
-      );
-    }
+  const resetFilters = () => {
+    setSearchTerm("");
+    setUserNameFilter("");
+    setTypeFilter("all");
+    setDateFilter("");
+    setPage(1);
   };
 
   const confirmDelete = async () => {
     if (!deletingNote) return;
     try {
       await deleteNote(deletingNote._id).unwrap();
-      toast.success("Note deleted by Admin");
+      toast.success("Note deleted successfully");
       setDeletingNote(null);
     } catch (err: unknown) {
       toast.error(
@@ -110,11 +89,12 @@ export default function AllNotesManagement() {
   return (
     <AdminRoleGuard>
       <div className="space-y-6">
+        {/* Top Header */}
         <div className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs sm:flex-row sm:items-center">
           <div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2.5">
               <h1 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
-                All Users&apos; Notes (Admin View)
+                All Users&apos; Notes Management
               </h1>
               {meta && (
                 <Badge variant="indigo" className="font-mono">
@@ -123,11 +103,8 @@ export default function AllNotesManagement() {
               )}
             </div>
             <p className="mt-1 text-xs text-slate-500">
-              Admin can inspect, edit, and delete any user&apos;s notes indexed
-              by{" "}
-              <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-indigo-600">
-                {"{ createdAt: -1 }"}
-              </code>
+              Inspect, filter, edit, and manage Personal & Community notes
+              across all platform users.
             </p>
           </div>
           <Button
@@ -140,140 +117,138 @@ export default function AllNotesManagement() {
           </Button>
         </div>
 
+        {/* Multi-Filter Toolbar: Search, Author Name, Note Type & Date */}
+        <div className="grid grid-cols-1 gap-2.5 rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-xs sm:grid-cols-2 sm:gap-3 sm:p-4 lg:grid-cols-4">
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Search note title or content..."
+              className="h-10 w-full rounded-xl border border-slate-200/90 bg-white pr-3.5 pl-9 text-xs font-medium text-slate-800 shadow-2xs transition-all placeholder:text-slate-400 hover:border-slate-300 focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 focus:outline-none"
+            />
+          </div>
+
+          <div className="relative">
+            <User className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={userNameFilter}
+              onChange={(e) => {
+                setUserNameFilter(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter by user name or email..."
+              className="h-10 w-full rounded-xl border border-slate-200/90 bg-white pr-3.5 pl-9 text-xs font-medium text-slate-800 shadow-2xs transition-all placeholder:text-slate-400 hover:border-slate-300 focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <Select
+              value={typeFilter}
+              icon={<Layers className="h-3.5 w-3.5 text-indigo-500" />}
+              onValueChange={(val) => {
+                setTypeFilter(val as "all" | "personal" | "community");
+                setPage(1);
+              }}
+              options={[
+                {
+                  label: "All Note Types",
+                  value: "all",
+                  dotColor: "bg-slate-400",
+                },
+                {
+                  label: "Personal Notes",
+                  value: "personal",
+                  dotColor: "bg-indigo-600",
+                },
+                {
+                  label: "Community Notes",
+                  value: "community",
+                  dotColor: "bg-emerald-500",
+                },
+              ]}
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Calendar className="pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              <input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => {
+                  setDateFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="h-10 w-full cursor-pointer rounded-xl border border-slate-200/90 bg-white pr-2.5 pl-8 text-xs font-semibold text-slate-700 shadow-2xs transition-all hover:border-slate-300 focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/15 focus:outline-none"
+              />
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={resetFilters}
+              title="Reset Filters"
+              className="h-10 w-10 shrink-0 cursor-pointer rounded-xl border-slate-200/90 p-0 text-slate-600 shadow-2xs hover:bg-slate-100"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Notes Grid */}
         {isLoading ? (
           <CardSkeleton count={6} columns={3} />
         ) : notes.length === 0 ? (
           <EmptyState
             icon={<FileText className="h-10 w-10" />}
-            title="No notes exist yet"
-            description="Create the first note or wait for platform users to add notes."
+            title="No matching notes found"
+            description="Try clearing your search, user, date, or note type filters, or create a new note."
+            action={
+              <Button
+                type="button"
+                onClick={openCreateModal}
+                className="h-9 cursor-pointer gap-1.5 rounded-xl bg-indigo-600 px-4 text-xs font-bold text-white"
+              >
+                <Plus className="h-4 w-4" />
+                Create Note
+              </Button>
+            }
           />
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {notes.map((note) => {
-              const owner =
-                typeof note.userId === "object" && note.userId !== null
-                  ? note.userId
-                  : null;
-
-              return (
-                <Card
-                  key={note._id}
-                  className="justify-between p-5 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
-                >
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[11px] font-bold text-indigo-700">
-                          {(owner?.name || "U").charAt(0).toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-xs font-bold text-slate-900">
-                            {owner?.name || "User"}
-                          </p>
-                          <p className="truncate font-mono text-[10px] text-slate-400">
-                            {owner?.email || ""}
-                          </p>
-                        </div>
-                      </div>
-                      {owner?.role && <RoleBadge role={owner.role} />}
-                    </div>
-
-                    <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="line-clamp-1">{note.title}</CardTitle>
-                      <div className="flex shrink-0 items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(note)}
-                          className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600"
-                          title="Edit Note"
-                        >
-                          <Edit3 className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeletingNote(note)}
-                          className="cursor-pointer rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
-                          title="Delete Note"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <p className="line-clamp-3 whitespace-pre-line text-xs leading-relaxed text-slate-600">
-                      {note.content}
-                    </p>
-                  </CardContent>
-
-                  <CardFooter>
-                    <span className="inline-flex items-center gap-1 font-mono text-[11px] text-slate-400">
-                      <Clock className="h-3 w-3" />
-                      {note.createdAt
-                        ? new Date(note.createdAt).toLocaleDateString()
-                        : "Recent"}
-                    </span>
-                    <Badge variant="secondary" className="font-mono text-[10px]">
-                      Indexed Note
-                    </Badge>
-                  </CardFooter>
-                </Card>
-              );
-            })}
+            {notes.map((note) => (
+              <AdminNoteCard
+                key={note._id}
+                note={note}
+                onEdit={openEditModal}
+                onDelete={(targetNote) => setDeletingNote(targetNote)}
+              />
+            ))}
           </div>
         )}
 
-        <Pagination meta={meta} onPageChange={setPage} />
+        <Pagination
+          meta={meta}
+          onPageChange={setPage}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+          limitOptions={[6, 12, 24, 48]}
+          alwaysShow
+        />
 
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent onClose={() => !isSubmitting && setIsModalOpen(false)}>
-            <DialogHeader>
-              <DialogTitle>
-                {editingNote ? "Edit User Note" : "Create New Note"}
-              </DialogTitle>
-              <DialogDescription>
-                {editingNote
-                  ? "Update the title or content of this note with Admin permissions."
-                  : "Create a new note in the database."}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
-              <Input
-                label="Note Title"
-                placeholder="Enter note title"
-                required
-                error={errors.title?.message}
-                {...register("title", { required: "Title is required" })}
-              />
-              <Textarea
-                label="Note Content"
-                placeholder="Write note details..."
-                rows={5}
-                required
-                error={errors.content?.message}
-                {...register("content", { required: "Content is required" })}
-              />
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsModalOpen(false)}
-                  className="h-9 cursor-pointer rounded-xl text-xs font-semibold"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="h-9 cursor-pointer gap-1.5 rounded-xl bg-indigo-600 px-5 text-xs font-bold text-white hover:bg-indigo-700"
-                >
-                  {isSubmitting && <Spinner className="h-3.5 w-3.5" />}
-                  {editingNote ? "Save Changes" : "Create Note"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <NoteFormModal
+          open={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          editingNote={editingNote}
+        />
 
         <DeleteModal
           open={!!deletingNote}

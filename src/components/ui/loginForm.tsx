@@ -174,12 +174,6 @@ export default function LoginForm() {
                 </motion.div>
 
                 <div className="mt-6 flex items-center justify-between text-sm">
-                  <Link
-                    href="#"
-                    className="text-blue-600 hover:text-blue-700 transition-colors"
-                  >
-                    Forgot password?
-                  </Link>
                   <p className="text-gray-500">
                     Don&apos;t have an account?{" "}
                     <Link

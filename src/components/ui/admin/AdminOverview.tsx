@@ -1,6 +1,4 @@
 "use client";
-
-import React from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -58,7 +56,6 @@ export default function AdminOverview() {
     {
       label: "All Users' Notes",
       value: totalNotes,
-      sub: "Indexed by { userId: 1, createdAt: -1 }",
       icon: FileStack,
       href: "/admin/notes",
       tone: "from-violet-500 to-purple-600",
@@ -67,7 +64,6 @@ export default function AdminOverview() {
     {
       label: "Community Posts",
       value: totalPosts,
-      sub: "Scenario 2 ($lookup ready)",
       icon: Globe,
       href: "/admin/posts",
       tone: "from-emerald-500 to-teal-600",
@@ -76,7 +72,6 @@ export default function AdminOverview() {
     {
       label: "Interest Groups",
       value: totalInterests,
-      sub: "Scenario 1 (Single aggregate)",
       icon: Layers,
       href: "/admin/settings",
       tone: "from-amber-500 to-orange-500",
@@ -86,15 +81,15 @@ export default function AdminOverview() {
 
   return (
     <AdminRoleGuard>
-      <div className="space-y-8">
+      <div className="space-y-4 sm:space-y-6 lg:space-y-8">
         {/* Top Enterprise Banner */}
-        <div className="flex flex-col justify-between gap-4 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 text-white shadow-lg sm:flex-row sm:items-center sm:p-8">
+        <div className="flex flex-col justify-between gap-4 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-5 text-white shadow-lg sm:flex-row sm:items-center sm:p-7 md:p-8">
           <div>
             <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-indigo-500/20 px-3 py-1 font-mono text-[11px] font-semibold text-indigo-300 ring-1 ring-indigo-400/30">
               <Sparkles className="h-3.5 w-3.5 text-amber-400" />
               <span>PRODUCTION RBAC TELEMETRY</span>
             </div>
-            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+            <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl md:text-3xl">
               System Overview & Activity
             </h1>
             <p className="mt-1 text-xs text-slate-300 sm:text-sm">
@@ -102,17 +97,17 @@ export default function AdminOverview() {
               and MongoDB index performance.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <Link href="/admin/users">
-              <Button className="h-10 cursor-pointer gap-1.5 rounded-xl bg-indigo-600 px-4 text-xs font-bold text-white hover:bg-indigo-500">
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+            <Link href="/admin/users" className="w-full sm:w-auto">
+              <Button className="h-10 w-full sm:w-auto cursor-pointer gap-1.5 rounded-xl bg-indigo-600 px-4 text-xs font-bold text-white hover:bg-indigo-500">
                 <Users className="h-4 w-4" />
                 Manage Users
               </Button>
             </Link>
-            <Link href="/admin/notes">
+            <Link href="/admin/notes" className="w-full sm:w-auto">
               <Button
                 variant="outline"
-                className="h-10 cursor-pointer gap-1.5 rounded-xl border-slate-700 bg-slate-800/70 px-4 text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-white"
+                className="h-10 w-full sm:w-auto cursor-pointer gap-1.5 rounded-xl border-slate-700 bg-slate-800/70 px-4 text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-white"
               >
                 <FileStack className="h-4 w-4" />
                 Inspect Notes
@@ -122,7 +117,7 @@ export default function AdminOverview() {
         </div>
 
         {/* 4 KPI Stat Cards */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
           {kpis.map((kpi) => {
             const Icon = kpi.icon;
             return (
@@ -145,12 +140,6 @@ export default function AdminOverview() {
                     >
                       <Icon className="h-5 w-5" />
                     </div>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-                    <span className="font-mono text-[10px] text-slate-400">
-                      {kpi.sub}
-                    </span>
-                    <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-indigo-600" />
                   </div>
                 </Card>
               </Link>
@@ -207,11 +196,9 @@ export default function AdminOverview() {
             <Card className="p-6">
               <CardHeader className="mb-4 flex-row items-center justify-between border-b border-slate-100 pb-3">
                 <CardTitle className="text-base">
-                  Interest Groups (Scenario 1)
+                  Interest Groups
                 </CardTitle>
-                <Badge variant="indigo" className="font-mono text-[10px]">
-                  aggregate()
-                </Badge>
+
               </CardHeader>
               <CardContent className="space-y-2.5">
                 {interestGroups.map((g) => (

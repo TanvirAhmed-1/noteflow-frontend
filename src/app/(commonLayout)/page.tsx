@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
-import HomeContainer from "@/components/ui/home/HomeContainer";
+import React, { Suspense } from "react";
+import NotesSection from "@/components/ui/home/NotesSection";
+import { CardSkeleton } from "@/components/shared";
 
 export const metadata: Metadata = {
-  title: "Workspace | NoteFlow RBAC",
+  title: "My Notes | NoteFlow Workspace",
   description:
-    "Manage your indexed personal notes, explore community posts with MongoDB $lookup aggregation, and view interest groups.",
+    "Create, edit, and manage your indexed personal notes with full RBAC protection.",
 };
 
-export default function HomePage() {
-  return <HomeContainer />;
+export default function MyNotesPage() {
+  return (
+    <Suspense fallback={<CardSkeleton count={6} columns={3} />}>
+      <NotesSection />
+    </Suspense>
+  );
 }
