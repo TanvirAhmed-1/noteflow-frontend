@@ -8,6 +8,7 @@ import {
   CardSkeleton,
   DeleteModal,
   EmptyState,
+  RichTextRenderer,
   RoleBadge,
   Select,
 } from "@/components/shared";
@@ -171,12 +172,15 @@ export default function OverviewPostsFeed() {
                 <h4 className="mt-3 text-sm font-bold text-slate-900">
                   {post.title}
                 </h4>
-                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-600">
-                  {post.content}
-                </p>
+                <div className="mt-1">
+                  <RichTextRenderer content={post.content} lineClamp={2} />
+                </div>
 
                 <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-400">
-                  <span className="inline-flex items-center gap-1 font-mono">
+                  <span
+                    suppressHydrationWarning
+                    className="inline-flex items-center gap-1 font-mono"
+                  >
                     <Clock className="h-3 w-3" />
                     {post.createdAt
                       ? new Date(post.createdAt).toLocaleString()

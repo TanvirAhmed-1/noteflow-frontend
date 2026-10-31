@@ -15,6 +15,11 @@ interface InterestPostTableRowProps {
   onDelete: (item: IPost) => void;
 }
 
+function stripHtml(html: string): string {
+  if (!html) return "";
+  return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
 export default function InterestPostTableRow({
   item,
   serialNumber,
@@ -62,7 +67,7 @@ export default function InterestPostTableRow({
           {item.title}
         </p>
         <p className="max-w-xs truncate text-[11px] text-slate-400">
-          {item.content}
+          {stripHtml(item.content)}
         </p>
       </TableCell>
 
