@@ -12,6 +12,7 @@ export interface IUser {
   name: string;
   email: string;
   role: TUserRole;
+  isActive?: boolean;
   interests: string[];
   createdAt?: string;
   updatedAt?: string;

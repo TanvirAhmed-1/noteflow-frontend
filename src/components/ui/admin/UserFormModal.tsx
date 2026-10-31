@@ -2,7 +2,6 @@
 
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { Edit3, UserPlus } from "lucide-react";
 import toast from "react-hot-toast";
 import { Input, Select, Spinner } from "@/components/shared";
 import { Button } from "@/components/ui/button";
@@ -25,6 +24,7 @@ interface UserFormValues {
   email: string;
   password?: string;
   role: TUserRole;
+  isActive: "true" | "false";
 }
 
 interface UserFormModalProps {
@@ -38,6 +38,7 @@ const defaultValues: UserFormValues = {
   email: "",
   password: "",
   role: "user",
+  isActive: "true",
 };
 
 export default function UserFormModal({
@@ -54,8 +55,13 @@ export default function UserFormModal({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<UserFormValues>({ defaultValues });
+
+  const selectedRole = watch("role");
+  const selectedStatus = watch("isActive");
 
   useEffect(() => {
     if (editingUser) {
@@ -64,6 +70,7 @@ export default function UserFormModal({
         email: editingUser.email,
         password: "",
         role: editingUser.role,
+        isActive: editingUser.isActive === false ? "false" : "true",
       });
     } else {
       reset(defaultValues);
@@ -72,16 +79,21 @@ export default function UserFormModal({
 
   const onSubmit = async (values: UserFormValues) => {
     try {
+      const isActiveBool = values.isActive === "true";
       if (editingUser) {
         const payload: Record<string, unknown> = {
           name: values.name,
           email: values.email,
           role: values.role,
+          isActive: isActiveBool,
         };
         await updateUser({ userId: editingUser._id, data: payload }).unwrap();
         toast.success("User account updated successfully!");
       } else {
-        await createAdminUser(values).unwrap();
+        await createAdminUser({
+          ...values,
+          isActive: isActiveBool,
+        }).unwrap();
         toast.success("New user created successfully!");
       }
       onOpenChange(false);
@@ -142,16 +154,36 @@ export default function UserFormModal({
             />
           )}
 
-          <Select
-            label="Access Role"
-            required
-            options={[
-              { label: "User", value: "user" },
-              { label: "Admin", value: "admin" },
-            ]}
-            error={errors.role?.message}
-            {...register("role", { required: "Access role is required" })}
-          />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Select
+              label="Access Role"
+              required
+              value={selectedRole}
+              onValueChange={(val) =>
+                setValue("role", val as TUserRole, { shouldValidate: true })
+              }
+              options={[
+                { label: "User", value: "user", dotColor: "bg-blue-500" },
+                { label: "Admin", value: "admin", dotColor: "bg-indigo-600" },
+              ]}
+              error={errors.role?.message}
+            />
+
+            <Select
+              label="Account Status"
+              required
+              value={selectedStatus}
+              onValueChange={(val) =>
+                setValue("isActive", val as "true" | "false", {
+                  shouldValidate: true,
+                })
+              }
+              options={[
+                { label: "Active", value: "true", dotColor: "bg-emerald-500" },
+                { label: "Inactive", value: "false", dotColor: "bg-rose-500" },
+              ]}
+            />
+          </div>
 
           <DialogFooter className="pt-2">
             <Button

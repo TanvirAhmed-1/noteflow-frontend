@@ -1,5 +1,5 @@
 import React from "react";
-import AdminSidebar from "@/components/layout/admin-sidebar";
+import AdminSidebar from "@/components/layout/AdminSidebar";
 
 export default function AdminLayout({
   children,
