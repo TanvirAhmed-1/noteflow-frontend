@@ -18,6 +18,23 @@ interface LoginFormValues {
   password: string;
 }
 
+function decodeRoleFromToken(token?: string): string | null {
+  if (!token) return null;
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    let base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    while (base64.length % 4 !== 0) {
+      base64 += "=";
+    }
+    const decodedStr = atob(base64);
+    const parsed = JSON.parse(decodedStr);
+    return parsed?.role || null;
+  } catch {
+    return null;
+  }
+}
+
 export default function LoginForm() {
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
@@ -37,11 +54,18 @@ export default function LoginForm() {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       const res = await loginUser(data).unwrap();
-      if (res?.result?.token) {
-        await setTokenCookie(res.result.token);
+      const token = res?.result?.token;
+      if (token) {
+        await setTokenCookie(token);
       }
       toast.success(res?.message || "Logged in successfully!");
-      router.push("/");
+
+      const role = res?.result?.role || decodeRoleFromToken(token);
+      if (role === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/");
+      }
     } catch (err: unknown) {
       const errorMsg =
         (err as { data?: { message?: string } })?.data?.message ||
